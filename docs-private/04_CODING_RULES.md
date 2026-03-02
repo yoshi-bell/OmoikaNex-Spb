@@ -24,16 +24,15 @@
 - **スタイリング:** モバイルファーストを徹底し、ユーティリティクラスに直接記述する。`@apply` は原則禁止。
 - **Shadcn/ui 活用:** UI コンポーネントには Shadcn/ui を積極的に採用し、一貫性のあるデザインを構築する。
 
-### バックエンド設計思想 (Thin Controller & API Resource)
+### データアクセス設計思想 (Repository Pattern for Supabase)
 
-- **役割分担の徹底:** コントローラーの責務を最小限に抑え、以下のコンポーネントに処理を委譲する。
-    - バリデーション → `FormRequest`
-    - ビジネスロジック・クエリ → `Service`
-    - レスポンス整形 → `JsonResource`
-- **命名規則:** クラス名は `PascalCase`、メソッド・変数は `camelCase`、DBカラムは `snake_case` を厳守。
-- **use 文の積極使用と FQCN の排除:**
-    - コード内でのフルパス指定（例: `\App\Models\User`）は原則禁止。
-    - 必ずファイルの冒頭で `use` 文を宣言し、クラス名のみで参照すること。
+- **UIとデータ取得の分離:** Reactコンポーネント（SSR/CSR問わず）の中に、`supabase.from('tweets').select()` のようなデータソース固有の記述を直接書くことを**厳格に禁止**する。
+- **データアクセス層 (API Layer) の設置:**
+    - Supabaseを用いたデータ取得・更新ロジックは、必ず `src/features/[domain]/api/` ディレクトリ配下の関数として切り出すこと。
+    - （将来のLaravelバックエンド移行時、この層の関数の中身をAxiosなどに書き換えるだけで済むようにするため）
+- **DB型の隠蔽とZodマッピング:**
+    - Supabaseから生成された型（`Database`）をそのままUI層に露出させない。
+    - API層で取得したデータを、フロントエンドで定義したZodスキーマ（またはドメイン固有のインターフェース）の型にマッピング（変換・パース）してから返すこと。
 
 ### 🛠️ 共通ルール
 
@@ -41,8 +40,6 @@
     - **Good:** `return isAxiosError(e) && (e.response !== undefined);`
 
 ---
-
-## 📂 ディレクトリ構造と責務 (Directory Structure)
 
 ### フロントエンド (Next.js - `src/`)
 
@@ -52,20 +49,16 @@
 - `components/`:
     - `ui/`: Shadcn などの共通基本UI部品
     - `features/`: ドメイン・機能ごとの複雑なコンポーネント
-- `lib/`: 便利関数 (`utils.ts`)、APIフェッチクライアント、外部ライブラリ設定
-- `types/`: TypeScript 型定義（自動生成された `schema.d.ts` など）
+        - `features/[domain]/api/`: **[重要]** Supabase通信やFetchロジックをカプセル化する層
+        - `features/[domain]/components/`: ドメインに紐付くUI
+- `lib/`: 便利関数 (`utils.ts`)、Supabaseクライアントの初期化 (`supabase/`)
+- `types/`: TypeScript 型定義（Supabaseから生成された `database.types.ts` など）
 - `hooks/`: カスタムフックや React Query のクエリフック
 - `store/`: Zustandストア
 
-### バックエンド (Laravel - `app/`)
+### バックエンド (Supabase)
 
-- `Http/Controllers/API/`: Vue/React 向けにJSONのみを返すAPIエンドポイント。
-- `Http/Requests/`: FormRequest による入力データ検証。
-- `Http/Resources/`: JSONレスポンスの形を整える API Resource。
-- `Services/`: ビジネスロジック、複雑なクエリの集約。
-- `Models/`: Eloquent モデル、リレーション、キャスト定義。
-
----
+- （本プロジェクト OmoikaNex-Spb におけるバックエンドファイルは存在しない。DB定義は `supabase/Migrations` 等で管理される）
 
 ## 📝 コメント規則 (Commenting Rules)
 

@@ -37,9 +37,9 @@
 
 ### ステップ 2: 実装状況の検証 (Code Verification)
 
-- [ ] **環境の確認:** Laravel 12 (API専用) + Next.js 15 (App Router) + TypeScript 環境が正常にセットアップされているか。
-- [ ] **型同期パイプライン:** `Scramble` -> `openapi-typescript` による `schema.d.ts` の生成フローが動作するか。
-- [ ] **認証基盤:** Laravel Sanctum (API Token) によるトークンが Next.js のサーバー（Route Handlers 等）経由で HttpOnly Cookie に保存される BFF構成が正しく動いているか。
+- [ ] **環境の確認:** Next.js 15 (App Router) + TypeScript + Supabase クライアント環境が正常にセットアップされているか。
+- [ ] **型同期パイプライン:** Supabase CLI を用いた `database.types.ts` の生成フローが動作し、UIと連携できているか。
+- [ ] **認証基盤:** Supabase Auth (`@supabase/ssr`) を用いた認証フローと、Cookieベースのセッション管理が正しく動いているか。
 
 ### ステップ 3: 結論の導出と報告
 
@@ -54,6 +54,6 @@
 
 ## 3. 想定される結論
 
-現在のフェーズ: Phase 2: 「鉄壁のフォーム基盤」の構築
-完了していること: Phase 1（Laravel 12 / Next.js 15 初期化、Scramble による型同期パイプラインの確立）。
-未完了・次のタスク: Zod スキーマの策定、React Hook Form (RHF) の導入、および UI コンポーネント基盤の整備。
+現在のフェーズ: Phase 1: インフラと「型同期」パイプラインの初期構築 (Supabase)
+完了していること: プロジェクト憲法・ルールの整備（Supabaseファースト・二本立て戦略 ON-Plan の策定）。
+未完了・次のタスク: Next.js の構築, Supabaseクライアントの導入, 型定義自動生成のセットアップ。

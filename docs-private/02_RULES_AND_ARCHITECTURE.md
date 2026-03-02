@@ -24,33 +24,33 @@
     - Gitコミットメッセージは「日本語」かつ「プレフィックス（`feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:`）」を必ず使用すること。
 2.  **型安全性のフロントロード化 (Type Safety Front-loading):**
     - 過去プロジェクトで後から苦労して導入した技術（Zod, RHF, Zustand, OpenAPI連携, Branded Types）を**最初から標準アーキテクチャとして組み込む**。
-    - フロントエンドの型定義を手動で作成・保守してはならない。必ずバックエンドの仕様（Scramble）による自動生成型定義を利用すること。
-3.  **APIベースの完全分離構成 (Headless Architecture):**
-    - バックエンド（Laravel）は純粋なAPIサーバーとして振る舞い、ステートレスにする。
-    - フロントエンド（Next.js）がUIと状態管理を担う。
+    - フロントエンドの型定義を手動で作成・保守してはならない。必ず Supabase CLI による自動生成型定義 (`Database` 型) を利用すること。
+3.  **BaaSベースの高速MVPと移植性 (Supabase & Portability):**
+    - バックエンドは **Supabase** を利用し、最速でプロダクト（MVP）を構築する。
+    - 将来的な「Next.js + Laravel構成（ON-Plan Phase B）」への移植を前提とするため、Next.jsのUIコンポーネント内にSupabase特有のコードを直接書くことを固く禁じる（Repositoryパターンの強制）。
 4.  **品質の保証 (Testing & Verification):**
-    - 新機能の開発にあたっては、その品質を担保するため、必ず対応するテスト（Pest/PHPUnit または Playwright/Vitest）を作成・実行し、継続的な動作保証の基盤を構築すること。
+    - 新機能の開発にあたっては、その品質を担保するため、必ず対応するテストを作成・実行し、継続的な動作保証の基盤を構築すること。
 
 ---
 
 ## 🏗️ アーキテクチャと設計思想 (Architecture & Philosophy)
 
-### アーキテクチャ: 完全分離型 (Fully Decoupled)
+### アーキテクチャ: Supabase ファースト (Supabase First)
 
-- **Backend:** Laravel 12 (API専用 / ステートレス)
+- **Backend / Database:** Supabase (PostgreSQL, Auth, Realtime)
 - **Frontend:** Next.js 15 (App Router) + TypeScript
 - **コンポーネント / UI:** Tailwind CSS, Shadcn/ui
 - **状態管理 (State):** Zustand (グローバルUI状態), React Query (サーバー非同期取得/キャッシュ)
-- **型・バリデーション:** Zod, React Hook Form (RHF), openapi-typescript
+- **型・バリデーション:** Zod, React Hook Form (RHF), `@supabase/supabase-js` 生成型
 
 ### 認証 (Authentication)
 
-- **Laravel Sanctum (API Token方式)** を採用。SPA認証（Session Cookieベース）ではない。
-- Next.jsのサーバー（Route HandlersやServer Actions）をBFF層として使い、取得したトークンを **HttpOnly Cookie** としてセキュアに管理する。
+- **Supabase Auth** を採用。
+- `@supabase/ssr` を用いて、Next.jsの Middleware および Server Components とシームレスに統合されたCookieベースのセキュアなセッション管理を行う。
 
 ### 開発方針
 
-- **技術スタックのモダン化:** バックエンドとフロントエンドを分離し、よりスケーラブルな構成にする。
+- **Repository パターンの強制:** Supabase特有のデータフェッチロジックは `src/features/.../api` など特定の層に隔離し、UIコンポーネントから直接呼ばない。将来のLaravel化（バックエンド差し替え）時にUIへの修正をゼロにするため。
 - **ドキュメント駆動開発:** AIのリカバリと品質担保のため、実装前に必ず設計をドキュメント化し、実装後にログを残すサイクルを徹底する。
 
 ---
@@ -59,13 +59,13 @@
 
 ### データベース設計
 
-- **マイグレーション:** Laravel 12の標準構成に準拠。
-- **最適化:** SNSにおける大量データとN+1問題を回避するため、Strict Mode (`Model::preventLazyLoading()`) を有効化し、適切な Eager Loading (`with()`, `withCount()`) を設計時に考慮する。
+- **マイグレーション:** Supabase CLI を用いたマイグレーション管理。
+- **セキュリティ:** Row Level Security (RLS) を必ず有効化し、データベースレベルでのアクセス制御（認可）を徹底する。
 
 ### バリデーション
 
-- **Backend:** FormRequestによる厳格検証。
-- **Frontend:** `Zod` + `React Hook Form` をUI（Shadcn UI）と強固に統合した「鉄壁のフォーム基盤」を構築する。
+- **Backend:** データベース(RLS)およびスキーマ制約による保護。
+- **Frontend:** `Zod` + `React Hook Form` をUI（Shadcn UI）と強固に統合した「鉄壁のフォーム基盤」を構築し、Supabaseの自動生成型とマッピングする。
 
 ---
 
