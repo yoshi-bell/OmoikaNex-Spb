@@ -1,8 +1,9 @@
-# SNSアプリ OmoikaNex 開発ログ (Development Log)
+# OmoikaNex-Spb 開発ログ (Development Log)
 
 ## 概要
 
-このドキュメントは、過去のプロジェクトで得た高度なリファクタリングの知見（Zod, React Hook Form, Zustand, OpenAPI連携, APIベースの完全分離構成）をフロントロードした、最新の技術スタック（Laravel 12 / Next.js 15 / TypeScript）による SNS アプリケーションの開発プロセス、技術的決定事項、および学習の軌跡を記録するものです。
+このドキュメントは、プロジェクト「OmoikaNex-Spb（Supabase版）」の開発プロセスを記録するものです。
+当初の Laravel 12 構成から、より迅速な MVP 開発を目指して Supabase へと舵を切った経緯を含め、すべての技術的決定事項と学習の軌跡を蓄積します。
 
 ---
 
@@ -26,10 +27,6 @@
     - `04_CODING_RULES.md` / `05_DESIGN_PATTERNS.md`: Next.js 固有のディレクトリ構成、React Query の Server/Client State 分離、そして Zustand の利用方針を策定。
     - `06_TESTING_GUIDE.md`: JSON API に対するテストと MSW/React Query のモック指針を追加。
 
-### 本日の結果と次回のタスク
-
-**次回のタスク (Phase 1):** Backend (Laravel 12) のインストール、APIルーティング設定、Sanctumトークン環境の構築、および `Scribe` の初期設定へ進む。
-
 ---
 
 ## 2026-02-26: プロジェクト「OmoikaNex」正式始動とバックエンド初期化
@@ -48,33 +45,33 @@
     - `php artisan install:api` を実行し、Sanctum 認証基盤を導入。
     - `User` モデルに `HasApiTokens` トレイトを追加し、トークンベース認証の準備を完了。
 
-### 本日の結果と次回のタスク
+### 本日の結果
 
 - **ステータス:** Phase 1（インフラと型同期の初期構築）完了。
 - **成果:**
     - Laravel 12 (API) と Next.js 15 の基盤を構築。
     - `Scramble` + `openapi-typescript` による API 型同期パイプラインを確立。バックエンドの変更がフロントの `schema.d.ts` に自動反映されることを確認。
-- **次回のタスク (Phase 2):** 「鉄壁のフォーム基盤」の構築。Zod スキーマの策定、React Hook Form (RHF) の導入、および Shadcn UI による UI コンポーネント基盤の整備。
 
 ---
 
-## 2026-03-02: ON-Plan「二本立て戦略」の策定と OmoikaNex-Spb の始動
+## 2026-03-02: ON-Plan「二本立て戦略」の策定と Supabase 開発基盤の確立 (Phase 1)
 
-### 1. マスター学習計画 (ON-Plan) の決定
+### 1. マスター学習・開発計画 (ON-Plan) の採択
+- **戦略転換:** 即戦力化と学習効率の最大化を狙い、バックエンドを Laravel から **Supabase** に切り替えた最速 MVP 開発（Phase A）を先行させる「二本立て戦略」を決定した。
+- **構造再編:** 全体を統括する `ON-Plan` フォルダを作成し、その配下に Laravel 版と Supabase 版の両リポジトリを並列配置する構造に整理した。
+- **移植性の設計:** フロントエンド UI をバックエンドから完全に抽象化（Repository パターン）し、将来的に Laravel 版（Phase B）へ無修正で移植可能とする高度なアーキテクチャを定義した。
 
-- **戦略転換:** 即戦力化と学習効率の最大化を狙い、バックエンドを Laravel から **Supabase** に切り替えた最速MVP開発（Phase A）を先行させる「二本立て戦略」を採択した。
-- **構造再編:** 全体を統括する `ON-Plan` フォルダを作成。その配下に、Laravel用の `OmoikaNex` (Phase B向け・一時凍結) と、新設した Supabase用の `OmoikaNex-Spb` (Phase A) の両リポジトリを配置する構造に整理した。
-- **マスター計画書:** `ON-Plan/IMPLEMENTATION_PLAN.md` を作成し、フロントエンドUIコードを抽象化（Repositoryパターン）し、後日 Laravel 版へ「UIへの修正ゼロで移植する」という壮大なアーキテクチャ設計を定義した。
+### 2. インフラ構築と疎通確認
+- **環境整備:** `OmoikaNex-Spb` ディレクトリから不要な Laravel 資産（`backend-api`）をパージし、純粋な Next.js 15 プロジェクトへとクリーンアップした。
+- **Supabase 連携:** 
+    - `@supabase/supabase-js` および `@supabase/ssr` を導入。
+    - 規約に基づき、SSR/CSR 両対応の「通信局」(`src/lib/supabase/client.ts` / `server.ts`) を構築した。
+    - 疎通確認用トップページの実装により、サーバー・クライアント両面からの API 通信成功（`Auth session missing!` レスポンスの正常受信）を実証した。
 
-### 2. OmoikaNex-Spb ドキュメントの Supabase 化
+### 3. アーキテクチャの法制化と認証の抽象化
+- **Repository パターンの強制:** `04_CODING_RULES.md` を更新。UI コンポーネント内での `supabase.from()` の直接呼び出しを厳禁とし、API 通信層への隔離をプロジェクトの最高法規とした。
+- **認証方式の隠蔽:** `05_DESIGN_PATTERNS.md` をリファクタリング。JWT (Supabase) と セッションCookie (Laravel) の差異を隠蔽するための「認証抽象化フック (`useAuthUser`)」および「サーバーサイド認証関数 (`getAuthUserServer`)」の設計ルールを制定した。
+- **二段構えバリデーション:** フロントの Zod とデータベース層の RLS/CHECK 制約を組み合わせた、BaaS 固有のセキュリティ戦略を確立した。
 
-- `OmoikaNex-Spb/docs-private/` 以下の設計ドキュメントから Laravel 依存の記述を徹底的に排除・修正した。
-- `02_RULES_AND_ARCHITECTURE.md`: バックエンドを `Supabase (PostgreSQL, Auth, Realtime)` に変更。
-- `04_CODING_RULES.md`: フロントエンド内で `supabase.from()` の直接呼び出しを禁じ、API通信層に隔離する **Repository パターンの強制** をルール化した。
-- `05_DESIGN_PATTERNS.md`: Laravel FormRequest に代わる「Next.js + Zod (第一関門)」と「Supabase RLS & 制約 (最後の砦)」の **二段構えバリデーション戦略** を定義した。
-- `01_AGENT_RECOVERY_MANUAL.md` / `06_TESTING_GUIDE.md`: 復旧手順やテスト要件を Supabase 環境に最適化。
-
-### 本日の結果と次回のタスク
-
-- **ステータス:** Phase 1 (Supabase) 設計・ドキュメント整備の完了。
-- **次回のタスク:** `OmoikaNex-Spb` フォルダ内にある不要な Laravel 資産（`backend-api`）の完全な削除とクリーンアップ。その後、Next.js 15 プロジェクト上への Supabase クライアント (`@supabase/supabase-js`, `@supabase/ssr`) の導入および環境変数の設定に進む。
+### 4. 品質保証体制の高度化
+- **戦略的テストプロトコルの導入:** `06_TESTING_GUIDE.md` に AI 活用の三大戦略（エッジケース探索、プロパティベース、敵対的テスト生成）を統合。バグを「通るためのテスト」ではなく「壊すためのテスト」で狩り取る体制を整えた。

@@ -69,8 +69,8 @@
 > AIエージェントは作業中、常にここを更新すること。
 
 **現在のフェーズ:** Phase 1: インフラと「型同期」パイプラインの初期構築 (Supabase)
-**現在のアクティブタスク:** プロジェクトドキュメントの初期再編と基盤ルールの確立
-**ステータス:** ON-Plan「二本立て戦略」に基づき、SupabaseとNext.jsを用いた「Supabaseファースト (Phase A)」のルール整備および環境の初期化を行っている。
+**現在のアクティブタスク:** Supabase 側でのテーブル構築と初期型同期の実施
+**ステータス:** Next.js と Supabase の通信（疎通確認）には成功した。次は `SCHEMA.md` に基づいて Supabase 上にテーブルを作成し、CLI を使って `database.types.ts` を生成する「型同期の完遂」を目指す。
 
 ---
 
@@ -78,9 +78,9 @@
 
 ### Phase 1: インフラと「型同期」パイプラインの初期構築
 
-- [x] **Next.js構築:** Next.js 15 (App Router) プロジェクトの生成、Tailwind v4 設定。（※既存OmoikaNexから引き継ぎ完了済）
-- [ ] **Laravel資産のパージ:** 本プロジェクト(OmoikaNex-Spb)内に残存している `backend-api` 等の不要なLaravel関連資産を完全に削除しクリーンアップする。
-- [ ] **Supabase連携:** `@supabase/supabase-js`, `@supabase/ssr` のインストールと環境変数設定。
+- [x] **Next.js構築:** Next.js 15 (App Router) プロジェクトの生成、Tailwind v4 設定。
+- [x] **Laravel資産のパージ:** 本プロジェクト(OmoikaNex-Spb)内に残存している `backend-api` 等の不要なLaravel関連資産を完全に削除しクリーンアップした。
+- [x] **Supabase連携:** `@supabase/supabase-js`, `@supabase/ssr` のインストールと環境変数設定。
 - [ ] **型同期確立:** Supabase CLI を用いた `database.types.ts` (TypeScript型定義) の自動生成スクリプト設定。
 
 ### Phase 2: 「鉄壁のフォーム基盤」の構築
