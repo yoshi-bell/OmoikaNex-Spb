@@ -56,9 +56,11 @@
 - `hooks/`: カスタムフックや React Query のクエリフック
 - `store/`: Zustandストア
 
-### バックエンド (Supabase)
+### バックエンド / インフラ (supabase/)
 
-- （本プロジェクト OmoikaNex-Spb におけるバックエンドファイルは存在しない。DB定義は `supabase/Migrations` 等で管理される）
+- `migrations/`: DBスキーマの変更履歴を保持する SQL ファイル群。
+    - 命名規則: `YYYYMMDDHHMMSS_description.sql`
+- `config.toml`: Supabase プロジェクトの設定ファイル（CLI 初期化時に生成）。
 
 ## 📝 コメント規則 (Commenting Rules)
 

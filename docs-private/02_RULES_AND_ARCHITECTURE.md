@@ -60,6 +60,10 @@
 ### データベース設計
 
 - **マイグレーション:** Supabase CLI を用いたマイグレーション管理。
+- **BaaS 管理原則 (BaaS Management Rules):**
+    - **No Manual Changes:** Supabase ダッシュボード（GUI）上でのテーブル作成・カラム変更を「原則禁止」とする。
+    - **IaC (Infrastructure as Code):** すべてのスキーマ変更は `supabase/migrations/` 配下の SQL ファイルとして記述し、Git で管理すること。
+    - **CLI 駆動:** データベースへの反映は必ず CLI (`supabase db push` 等) を介して行い、手動操作による環境の不一致を完全に排除する。
 - **セキュリティ:** Row Level Security (RLS) を必ず有効化し、データベースレベルでのアクセス制御（認可）を徹底する。
 
 ### バリデーション
