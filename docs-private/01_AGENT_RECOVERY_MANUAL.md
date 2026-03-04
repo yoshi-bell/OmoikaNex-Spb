@@ -38,7 +38,7 @@
 ### ステップ 2: 実装状況の検証 (Code Verification)
 
 - [ ] **環境の確認:** Next.js 15 (App Router) + TypeScript + Supabase クライアント環境が正常にセットアップされているか。
-- [ ] **型同期パイプライン:** Supabase CLI を用いた `database.types.ts` の生成フローが動作し、UIと連携できているか。
+- [ ] **型同期パイプライン:** `Scramble` -> `openapi-typescript` による `schema.d.ts` の生成フローが動作するか。
 - [ ] **認証基盤:** Supabase Auth (`@supabase/ssr`) を用いた認証フローと、Cookieベースのセッション管理が正しく動いているか。
 
 ### ステップ 3: 結論の導出と報告
@@ -55,5 +55,5 @@
 ## 3. 想定される結論
 
 現在のフェーズ: Phase 2: 「鉄壁のフォーム基盤」の構築
-完了していること: Phase 1（インフラ構築、ポリシー最適化、および `database.types.ts` による型同期の確立）。
-未完了・次のタスク: Branded Types を含む Zod スキーマの策定、React Hook Form (RHF) の導入、および Shadcn UI のセットアップ。
+完了していること: Phase 1 完遂、および Phase 2 の基盤（AppError, Branded Types, Zod Schema）の実装完了。
+未完了・次のタスク: Shadcn UI のセットアップ、React Hook Form (RHF) の導入、および認証フォーム（ログイン・登録）の実装。

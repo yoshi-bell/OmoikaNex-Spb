@@ -59,3 +59,23 @@
     - Next.js の Server Components や Middleware で認証を確認する場合、直接 Supabase クライアントを呼ばず、バックエンド非依存の共通関数（例: `getAuthUserServer`）を呼び出す。内部で Cookie（JWT）を扱うか Laravel に問い合わせるかは、この関数内でのみ管理する。
 - **【対策 3】 通信規格の隠蔽 (API Client):**
     - 「ヘッダーに JWT を載せる (Supabase)」か「Cookie をそのまま送る (Laravel)」かという差異は、API クライアント（`src/lib/api-client.ts`）のインターセプター層で吸収する。UI や Repository 側は、通信規格の詳細を一切意識せずにリクエストを投げられる構成を維持する。
+
+### 5. Repository層における型変換とマッピング (Mapping Strategy)
+
+DBの生データ（プリミティブ型）をドメインの正解（Branded Types）へと昇華させる「検品所」として Repository 層を定義する。
+
+- **境界線の確立:** `database.types.ts` で定義された `string` や `number` などのプリミティブ型は、Repository 層の内部に閉じ込める。
+- **Branded Mapping:** Zod の `.transform()` を活用し、データを取得した瞬間に `id: string` を `id: UserId` へと変換する。UI層へ渡されるオブジェクトは、すべて「ドメインとして完成された型」であることを保証する。
+
+### 6. 二段構えのバリデーション思想 (Validation Hierarchy)
+
+- **Zod (第一関門 / UX担当):** フロントエンドでの即時検証用。不必要なリクエストを削減し、快適なユーザー体験を提供する。
+- **DB制約・RLS (最終正解 / 整合性担当):** システムの絶対的な防波堤。Zod のすり抜けや直接の API 攻撃を、PostgreSQL の `CHECK`, `UNIQUE`, `RLS` で物理的に阻止する。
+- **設計の原則:** 開発者は「Zod はあくまでヒントであり、真実のバリデーションは DB 層にある」という意識を常に持ち、DB起因のエラーハンドリングを欠かさないこと。
+
+### 7. エラーハンドリング・マッピング (Error Translation)
+
+Supabase (BaaS) 特有のエラーを、UI が解釈可能な共通フォーマットに変換する。
+
+- **エラーマッパーの設置:** Supabase のエラーコード（PGRSTxxx や Auth エラー）を、ドメイン固有のエラー種別（`NETWORK_ERROR`, `AUTH_EXPIRED`, `NOT_FOUND` 等）に翻訳する層を Repository に設ける。
+- **エッジケース対応:** 通信断、レートリミット、および「RLS により取得件数が 0 になるが HTTP 200 が返るケース」などの、BaaS 固有のサイレントな失敗を適切に検知し、ユーザーへ通知する。
