@@ -55,5 +55,5 @@
 ## 3. 想定される結論
 
 現在のフェーズ: Phase 2: 「鉄壁のフォーム基盤」の構築
-完了していること: Phase 1 完遂、および Phase 2 の論理層（Zod Schema, Auth Store, useAuthUser Hook）と UI 基盤（Shadcn UI）の実装完了。
-未完了・次のタスク: React Hook Form (RHF) の導入、および実際の認証フォーム（ログイン・登録）の実装。
+完了していること: Phase 1 完遂、およびログイン機能（Repository, Form, Layout, Toaster）の実装と疎通確認完了。
+未完了・次のタスク: ユーザー登録フォーム（RegisterForm）の実装、および「認証の抽象化」に基づくログイン後のリダイレクト処理の完成。

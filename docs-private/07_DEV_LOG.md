@@ -120,4 +120,10 @@
 - **Auth ストア (Zustand):** アプリ全体の認証状態を一元管理するストアを `src/store/auth-store.ts` に実装。Branded なドメインユーザー型を保持するように設計した。
 - **認証抽象化フック (useAuthUser):** `src/hooks/useAuthUser.ts` を作成。内部で Supabase のセッション監視を行い、取得データを即座にドメイン型へ変換・ストア同期する仕組みを構築。これにより、UI 層からバックエンドの実装詳細を完全に隠蔽した（Auth Abstraction の執行）。
 
+### 6. ログイン機能の実装と疎通確認
+- **Auth Repository の実装:** `src/features/auth/api/auth.ts` を作成。Supabase Auth SDK をカプセル化し、エラーマッパーを介して UI へドメインエラーを返す Repository 層を構築した。
+- **ログインフォームの構築:** 見本画像を忠実に再現した `LoginForm.tsx` を実装。RHF + Zod + Shadcn UI を統合し、デザイン性と堅牢性を両立させた。
+- **共通認証レイアウト:** `app/(auth)/layout.tsx` および `AuthHeader` を作成。プロジェクトアセットの `logo.png` を活用し、ブランドイメージを統一した。
+- **エラー通知基盤の完成:** `src/app/layout.tsx` に `Toaster` を配置。Supabase からの 400 エラーが `mapSupabaseError` で翻訳され、トースト通知として正しく UI に表示されることを実証した。
+
 
