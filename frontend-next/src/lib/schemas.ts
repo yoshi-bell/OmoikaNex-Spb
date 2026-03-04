@@ -24,27 +24,19 @@ export const loginSchema = z.object({
 /**
  * ユーザー登録用
  */
-export const registerSchema = loginSchema
-    .extend({
-        name: z
-            .string()
-            .min(1, "ユーザー名を入力してください")
-            .max(50, "ユーザー名は50文字以内で入力してください"),
-        password: z
-            .string()
-            .min(8, "パスワードは8文字以上で入力してください")
-            .regex(
-                /^(?=.*?[a-z])(?=.*?\d)[a-z\d]+$/i,
-                "パスワードは英数字を混合してください",
-            ),
-        password_confirmation: z
-            .string()
-            .min(1, "確認用パスワードを入力してください"),
-    })
-    .refine((data) => data.password === data.password_confirmation, {
-        message: "パスワードが一致しません",
-        path: ["password_confirmation"],
-    });
+export const registerSchema = loginSchema.extend({
+    name: z
+        .string()
+        .min(1, "ユーザー名を入力してください")
+        .max(50, "ユーザー名は50文字以内で入力してください"),
+    password: z
+        .string()
+        .min(8, "パスワードは8文字以上で入力してください")
+        .regex(
+            /^(?=.*?[a-z])(?=.*?\d)[a-z\d]+$/i,
+            "パスワードは英数字を混合してください",
+        ),
+});
 
 /**
  * ==========================================

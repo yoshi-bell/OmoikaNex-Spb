@@ -15,10 +15,14 @@ export function mapSupabaseError(error: unknown): AppError {
 
     // 1. Supabase Auth 関連のエラー
     if (error instanceof AuthError) {
+        appError.message = error.message;
+
         switch (error.status) {
             case 400:
                 appError.type = "AUTH_FAILED";
-                appError.message = "認証情報が一致しません。";
+                if (error.message.includes("already registered")) {
+                    appError.message = "このメールアドレスは既に登録されています。";
+                }
                 break;
             case 401:
                 appError.type = "AUTH_EXPIRED";
