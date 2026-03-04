@@ -6,22 +6,22 @@ type Brand<K, T> = T & { __brand: K };
 /**
  * ユーザーID (uuid)
  */
-export type UserId = Brand<'UserId', string>;
+export type UserId = Brand<"UserId", string>;
 
 /**
  * ツイートID (bigint)
  */
-export type TweetId = Brand<'TweetId', number>;
+export type TweetId = Brand<"TweetId", number>;
 
 /**
  * 「いいね」ID (bigint)
  */
-export type LikeId = Brand<'LikeId', number>;
+export type LikeId = Brand<"LikeId", number>;
 
 /**
  * フォロー関係ID (bigint)
  */
-export type FollowId = Brand<'FollowId', number>;
+export type FollowId = Brand<"FollowId", number>;
 
 /**
  * プリミティブな型を Branded Type へ強制的に変換する関数

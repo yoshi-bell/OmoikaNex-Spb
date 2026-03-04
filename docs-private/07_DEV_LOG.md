@@ -115,4 +115,9 @@
 - **Repository の責務明確化:** アーキテクトの助言に基づき、`database.types.ts`（生の DB 型）を Repository 内部に隠蔽し、外部（UI層）へは Zod でパース・変換した純粋なドメイン型のみを公開する戦略を確定させた。
 - **DB制約至上主義:** Zod を「快適な UX のための第一関門」と位置づけつつ、最終的な正解は DB の制約（RLS や CHECK）にあるという設計思想を `05_DESIGN_PATTERNS.md` へ反映した。
 
+### 5. UI 基盤と認証抽象化レイヤーの確立
+- **Shadcn UI の導入:** `Slate` をベースカラーに採用し、Tailwind CSS v4 と統合された UI コンポーネント基盤を構築。
+- **Auth ストア (Zustand):** アプリ全体の認証状態を一元管理するストアを `src/store/auth-store.ts` に実装。Branded なドメインユーザー型を保持するように設計した。
+- **認証抽象化フック (useAuthUser):** `src/hooks/useAuthUser.ts` を作成。内部で Supabase のセッション監視を行い、取得データを即座にドメイン型へ変換・ストア同期する仕組みを構築。これにより、UI 層からバックエンドの実装詳細を完全に隠蔽した（Auth Abstraction の執行）。
+
 
