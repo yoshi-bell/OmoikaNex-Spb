@@ -25,7 +25,11 @@ export function useAuthUser() {
 
                 if (supabaseUser) {
                     // 生データをドメイン型 (Branded Types) へパース・変換
-                    const domainUser = userSchema.parse(supabaseUser);
+                    // Auth オブジェクトの user_metadata から name を抽出してマッピング
+                    const domainUser = userSchema.parse({
+                        ...supabaseUser,
+                        name: supabaseUser.user_metadata?.name || "Unknown",
+                    });
                     setUser(domainUser);
                 } else {
                     clearAuth();
@@ -43,7 +47,10 @@ export function useAuthUser() {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session?.user) {
-                const domainUser = userSchema.parse(session.user);
+                const domainUser = userSchema.parse({
+                    ...session.user,
+                    name: session.user.user_metadata?.name || "Unknown",
+                });
                 setUser(domainUser);
             } else {
                 clearAuth();

@@ -87,6 +87,9 @@ export const tweetSchema = z.object({
     updated_at: z.string(),
     // 投稿者情報のリレーションを統合 (userSchema を再利用)
     user: userSchema.optional(),
+    // いいね情報
+    likes_count: z.number().default(0),
+    is_liked: z.boolean().default(false),
 });
 
 /**

@@ -163,5 +163,27 @@
 - **Next.js セキュリティの適正化:** アバター画像自動生成 API (`api.dicebear.com` / SVG) を利用するため、`next.config.ts` で `dangerouslyAllowSVG: true` と `remotePatterns` を許可。
 - **CSP (Content Security Policy) の設定:** 単なる SVG 許可による XSS リスクを排除するため、`contentDispositionType` および厳格な `contentSecurityPolicy` (`script-src 'none'; sandbox;`) を併記。BaaS / フロントエンド開発において要求される高いセキュリティ水準を実践した。
 
+### 6. ツイート削除機能の実装と ZodError の解決 (Phase 4 開始)
+- **Repository の実装:** `src/features/tweets/api/delete-tweet.ts` を作成。ツイート ID を受け取り、Supabase の `delete()` を実行。RLS により、本人の投稿以外は DB レベルで削除を拒絶する堅牢な設計を維持。
+- **Mutation フック:** `useDeleteTweet.ts` を実装。削除成功時に `timeline` キャッシュを無効化し、UI への即時反映を実現。
+- **ZodError (Auth initialization error) の特定と修正:**
+    - **現象:** `useAuthUser` フック内で `userSchema.parse()` が失敗し、ログイン状態が `undefined` になるバグが発生。
+    - **原因:** Supabase Auth のデータでは `name` が `user_metadata` 内にあるため、`userSchema` が期待するトップレベルの `name` プロパティが欠落していた。
+    - **解決:** `useAuthUser.ts` 内でパース前に `user_metadata.name` をトップレベルへマッピングする前処理を追加し、検品フローを正常化。
+- **UI 制御の堅牢化:** `TweetCard.tsx` において、`user.id` と `tweet.user_id` の比較を明示的な文字列キャスト (`String()`) に変更。Branded Types の型変換による微細な差異を吸収し、確実に自分の投稿にのみ削除ボタンが表示されるよう修正。
+- **ユーザー体験 (UX):** 削除実行前に `window.confirm` による確認工程を挟み、誤操作によるデータ消失を防止。
+
+### 7. 「いいね」機能と楽観的UI更新 (Optimistic Update) の実装 (Phase 4 & 5)
+- **Schema & Query 拡張:** `src/lib/schemas.ts` および `get-timeline.ts` を更新。PostgREST のサブクエリを活用し、各ツイートの「いいね総数 (`likes_count`)」と「ログインユーザーのいいね状態 (`is_liked`)」を 1 回のクエリで効率的に取得する仕組みを構築。
+- **トグル Repository:** `toggle-like.ts` を実装。既存のいいねの有無を `maybeSingle()` で確認し、動的に追加 (Insert) または削除 (Delete) を行うトグルロジックを確立。
+- **楽観的UI更新の導入:** `useToggleLike.ts` フックにおいて React Query の `onMutate` を活用。
+    - 通信開始の瞬間にキャッシュを直接書き換え、ハートの点灯とカウント増減を即座に反映。
+    - 通信失敗時にはバックアップデータによる自動ロールバック (`onError`) を実装。
+- **検証を通じた技術的深化:** 
+    - **Mutation のエラー伝播:** Repository が返す失敗オブジェクトを `mutationFn` 内で明示的に `throw` することで、React Query の `onError`（ロールバック）を確実に発火させる設計へ改良。
+    - **Network Mode の制御:** オフライン時でも即座にロールバックを発生させるため、`networkMode: 'always'` を採用。BaaS 特有の非同期挙動に対する堅牢性を担保。
+- **UI の完成:** `TweetCard.tsx` に「いいね」ボタンを統合。`is_liked` に応じた動的な配色 (`text-rose-500`) と透明度の切り替え、およびリアルタイムな件数表示を実装。
+
+---
 
 
