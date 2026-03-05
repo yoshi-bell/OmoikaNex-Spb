@@ -154,5 +154,14 @@
     - **右メインエリア (`HomePage`):** ヘッダーのすりガラス効果を廃止し、タイムライン表示（`Timeline.tsx`）専用のコンテナとして再定義した。
 - **型安全性の遵守:** `Timeline` 内の `key` 指定における不自然なダブルキャスト（`as unknown as string`）を排除し、`String(tweet.id)` による安全な変換へ修正。また、生データへの一時的な `any` 適用に対し、規約通りに意図を明記する ESLint コメントを付与した。
 
+### 4. ツイート投稿 (Insert) と Mutation フローの完成
+- **Repository の実装:** `src/features/tweets/api/post-tweet.ts` を作成。Supabase Auth から取得した `user.id` と Zod で検証されたデータを結合し、`tweets` テーブルへ安全に INSERT するロジックを構築。
+- **React Query Mutation:** `usePostTweet` フックを作成し、投稿成功時に `queryClient.invalidateQueries(['timeline'])` を発火させる仕組みを実装。これにより、画面の再読み込みなしでタイムラインが自動更新される SNS のコア体験を実現した。
+
+### 5. アセット設定とセキュリティ強化 (next.config.ts)
+- **正式アセットの適用:** サイドバーのテキストロゴや仮アイコンを、正式なプロジェクト画像 (`logo.png`, `home.png`, `heart.png` 等) に置き換え、ダークモード用スタイル (`invert`) で最適化した。
+- **Next.js セキュリティの適正化:** アバター画像自動生成 API (`api.dicebear.com` / SVG) を利用するため、`next.config.ts` で `dangerouslyAllowSVG: true` と `remotePatterns` を許可。
+- **CSP (Content Security Policy) の設定:** 単なる SVG 許可による XSS リスクを排除するため、`contentDispositionType` および厳格な `contentSecurityPolicy` (`script-src 'none'; sandbox;`) を併記。BaaS / フロントエンド開発において要求される高いセキュリティ水準を実践した。
+
 
 

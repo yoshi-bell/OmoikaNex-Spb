@@ -31,7 +31,14 @@ export function Sidebar() {
     <aside className="flex h-full flex-col px-6 py-6">
       {/* ロゴ: 正式な画像ロゴを配置 */}
       <div className="mb-10 px-2">
-        <Image src="/images/logo.png" alt="SHARE" width={140} height={40} priority />
+        <Image 
+          src="/images/logo.png" 
+          alt="SHARE" 
+          width={140} 
+          height={40} 
+          priority 
+          style={{ height: 'auto' }}
+        />
       </div>
 
       {/* ナビゲーション */}

@@ -54,6 +54,6 @@
 
 ## 3. 想定される結論
 
-現在のフェーズ: Phase 3: データフェッチと状態管理
-完了していること: Phase 1 (インフラ), Phase 2 (認証), および React Query 導入・ダークモードUI (Timeline / Sidebar) の構築。
-未完了・次のタスク: ツイート投稿機能 (Post API) の実装と、React Query (`useMutation`) を用いたキャッシュの無効化・再取得フローの構築。
+現在のフェーズ: Phase 4: コア機能（SNSロジック）の開発
+完了していること: Phase 3 まで完遂。React Query を用いたタイムライン取得およびツイート投稿機能（Mutation）が実装済み。
+未完了・次のタスク: ツイートの「削除」機能および「いいね」機能の実装、ならびに楽観的 UI 更新 (Optimistic Update) の導入。
