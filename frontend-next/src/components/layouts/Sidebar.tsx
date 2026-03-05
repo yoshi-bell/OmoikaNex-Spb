@@ -29,9 +29,9 @@ export function Sidebar() {
 
   return (
     <aside className="flex h-full flex-col px-6 py-6">
-      {/* ロゴ: 左上に太字で SHARE */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-black tracking-tighter text-white">SHARE</h1>
+      {/* ロゴ: 正式な画像ロゴを配置 */}
+      <div className="mb-10 px-2">
+        <Image src="/images/logo.png" alt="SHARE" width={140} height={40} priority />
       </div>
 
       {/* ナビゲーション */}
@@ -40,7 +40,7 @@ export function Sidebar() {
           href="/"
           className="flex items-center gap-4 text-xl font-bold text-white transition-opacity hover:opacity-70"
         >
-          <Image src="/images/home.png" alt="ホーム" width={28} height={28} className="invert" />
+          <Image src="/images/home.png" alt="ホーム" width={24} height={24} className="brightness-0 invert" />
           ホーム
         </Link>
         
@@ -48,7 +48,7 @@ export function Sidebar() {
           onClick={handleLogout}
           className="flex items-center gap-4 text-xl font-bold text-white transition-opacity hover:opacity-70"
         >
-          <Image src="/images/logout.png" alt="ログアウト" width={28} height={28} className="invert" />
+          <Image src="/images/logout.png" alt="ログアウト" width={24} height={24} className="brightness-0 invert" />
           ログアウト
         </button>
       </nav>
