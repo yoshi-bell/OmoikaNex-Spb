@@ -54,6 +54,6 @@
 
 ## 3. 想定される結論
 
-現在のフェーズ: Phase 3: データフェッチと「状態管理」の確立
-完了していること: Phase 1 (インフラ) & Phase 2 (認証フォーム、DB自動同期、共通レイアウト) の実装完了。
-未完了・次のタスク: React Query (TanStack Query) の導入、タイムライン取得用の Repository 実装、および無限スクロールの基盤構築。
+現在のフェーズ: Phase 3: データフェッチと状態管理
+完了していること: Phase 1 (インフラ), Phase 2 (認証), および React Query 導入・ダークモードUI (Timeline / Sidebar) の構築。
+未完了・次のタスク: ツイート投稿機能 (Post API) の実装と、React Query (`useMutation`) を用いたキャッシュの無効化・再取得フローの構築。

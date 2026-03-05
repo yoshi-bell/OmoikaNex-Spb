@@ -85,7 +85,8 @@ export const tweetSchema = z.object({
     content: z.string(),
     created_at: z.string(),
     updated_at: z.string(),
-    // リレーション（ユーザー情報など）が含まれる場合の定義も今後追加
+    // 投稿者情報のリレーションを統合 (userSchema を再利用)
+    user: userSchema.optional(),
 });
 
 /**
