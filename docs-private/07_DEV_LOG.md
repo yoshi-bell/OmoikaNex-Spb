@@ -186,4 +186,33 @@
 
 ---
 
+## 2026-03-06: 開発環境の高度化とシードデータの完全攻略
+
+### 1. Infinite Scroll 実装に向けたダミーデータの生成
+- **目的:** タイムラインの無限スクロールを検証するため、最低 60 件以上のダミーデータと、複数のテストユーザーが必要となった。
+- **対応:** `supabase/seed.sql` を作成し、3名のテストユーザー (`Alice`, `Bob`, `Charlie`) と、1時間ずつ投稿時刻をずらした計 60 件のツイート (`public.tweets`) を一括挿入するスクリプトを記述した。
+
+### 2. ローカル開発環境へのルーティング切り替え
+- **現状の認識:** `npm run dev` で起動したアプリはクラウド上の Supabase を参照していた。
+- **対応:** `frontend-next/.env.local` を修正し、エンドポイントを `http://127.0.0.1:54321` (Docker) に切り替え。クラウドの設定はコメントアウトして保存し、シードデータを UI 上で確認・テストできる状態を構築した。
+
+### 3. Supabase Auth (GoTrue) との死闘と究極の解決策
+テストユーザーでログインを試みた際、`500 Internal Server Error` (`Database error Querying schema`) が発生し、深刻なブロックに直面した。テックリードの分析と実機データの直接比較により、以下の「罠」をすべて突破し、完璧なシードデータを完成させた。
+
+- **罠 1: パスワードのハッシュ化漏れ**
+    - **原因:** 平文でパスワードを挿入したため、Bcrypt 形式を期待する GoTrue が解読不能に陥った。
+    - **解決:** `pgcrypto` 拡張機能をマイグレーション (`20260302000000_create_initial_tables.sql`) で有効化し、`crypt('password123', gen_salt('bf'))` を用いて SQL レベルで自己文書化されたハッシュ化を行った。
+- **罠 2: トリガー関数の `search_path` 漏れ**
+    - **原因:** `handle_new_user` トリガーが `public` スキーマを見失い、エラーを引き起こす可能性があった。
+    - **解決:** 関数定義の末尾に `SECURITY DEFINER SET search_path = public` を追加し、実行コンテキストを固定した。
+- **罠 3: Go言語の Null パニック (Scan error) - 最大の要因**
+    - **原因:** `auth.users` にトークンやメタデータを挿入する際、省略したカラムが `NULL` となった。Go 言語で書かれた GoTrue サーバーは、文字列を期待する箇所に `NULL` が渡されるとパニックを起こしてクラッシュする仕様があった。
+    - **解決:** テックリードの指摘と、実機（新規登録成功時）のデータ (`docker exec ... psql -c "SELECT row_to_json(u) FROM auth.users u;"` による検証）との比較に基づき、以下の必須カラムを完全に補完した。
+        - **トークン群:** `confirmation_token`, `recovery_token`, `email_change_token_new`, `email_change`, `email_change_token_current`, `phone_change`, `phone_change_token`, `reauthentication_token` にすべて明示的な空文字 (`''`) を設定。
+        - **プロバイダー情報:** `raw_app_meta_data` に `'{"provider": "email", "providers": ["email"]}'` を設定。
+        - **タイムスタンプ:** `created_at`, `updated_at` に `now()` を設定（`confirmed_at` は制約により除外し、`email_confirmed_at` で代用）。
+
+### 本日の成果
+実機データとの「泥臭いが確実な比較」により、ローカル環境で 100% 確実に動作する「最強の seed.sql」が完成。README にテストアカウント情報を明記し、Infinite Scroll の実装準備を完全に整えた。
+
 

@@ -1,4 +1,9 @@
 -- ==========================================
+-- 0. 拡張機能の有効化 (Extensions)
+-- ==========================================
+create extension if not exists pgcrypto;
+
+-- ==========================================
 -- 1. users: ユーザー基本情報
 -- ==========================================
 create table public.users (
@@ -114,7 +119,7 @@ begin
   values (new.id, new.raw_user_meta_data->>'name', new.email);
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
 create trigger on_auth_user_created
   after insert on auth.users
