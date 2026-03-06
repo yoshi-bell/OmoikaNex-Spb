@@ -215,4 +215,12 @@
 ### 本日の成果
 実機データとの「泥臭いが確実な比較」により、ローカル環境で 100% 確実に動作する「最強の seed.sql」が完成。README にテストアカウント情報を明記し、Infinite Scroll の実装準備を完全に整えた。
 
+### 4. タイムラインの Infinite Scroll 実装と保守性の向上
+- **Repository の拡張:** `getTimeline` 関数を拡張し、`cursor` (作成日時) によるページネーションに対応。PostgREST の `lt` (Less Than) 演算子を用いて、過去の投稿を順次取得する仕組みを構築した。
+- **React Query の高度な利用:** `useQuery` から `useInfiniteQuery` へ移行。`getNextPageParam` により自動的なカーソル管理と次ページ取得を実現した。
+- **UI への統合:** `react-intersection-observer` を導入し、タイムライン最下部への到達を検知して自動フェッチを行うモダンな SNS UI を実装。60 件のダミーデータを用いた検証により、シームレスなスクロール体験を確認。
+- **マジックナンバーの排除:** プログラム内に散在していた取得件数「20」を `src/constants/config.ts` の定数 `TWEETS_PER_PAGE` へ集約。将来の仕様変更に対する拡張性と可読性を向上させた。
+
+---
+
 

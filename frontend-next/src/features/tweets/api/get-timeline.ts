@@ -2,15 +2,17 @@ import { createClient } from "@/lib/supabase/client";
 import { tweetSchema, type TweetDomain } from "@/lib/schemas";
 import { mapSupabaseError } from "@/lib/error-mapping";
 import { AppError } from "@/types/error";
+import { APP_CONFIG } from "@/constants/config";
 
 /**
  * タイムライン取得用の Repository 関数
  *
- * 最新のツイートを 20 件取得し、投稿者情報も結合します。
- * 取得した生データは Zod スキーマ (tweetSchema) でパースし、ドメイン型へ変換します。
+ * 最新のツイートを取得し、投稿者情報も結合します。
+ * cursor が指定されている場合、その日時より古い投稿を取得します (ページネーション)。
  */
-export async function getTimeline(): Promise<{
+export async function getTimeline(cursor?: string): Promise<{
     data: TweetDomain[] | null;
+    nextCursor: string | null;
     error: AppError | null;
 }> {
     const supabase = createClient();
@@ -33,6 +35,11 @@ export async function getTimeline(): Promise<{
       `,
         );
 
+        // cursor があればそれ以前のデータを取得 (created_at で比較)
+        if (cursor) {
+            query = query.lt("created_at", cursor);
+        }
+
         // ログインユーザーがいる場合のみ、自分のいいねを絞り込む
         if (userId) {
             query = query.eq("user_likes.user_id", userId);
@@ -43,14 +50,13 @@ export async function getTimeline(): Promise<{
 
         const { data, error } = await query
             .order("created_at", { ascending: false })
-            .limit(20);
+            .limit(APP_CONFIG.TWEETS_PER_PAGE);
 
         if (error) {
-            return { data: null, error: mapSupabaseError(error) };
+            return { data: null, nextCursor: null, error: mapSupabaseError(error) };
         }
 
         // 3. データの「検品 (パース)」と変換
-        // Zodで即座に安全なドメイン型へパースするため、ここは一時的にanyを許容する
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const parsedData = (data as any[]).map((tweet) => {
             return tweetSchema.parse({
@@ -60,9 +66,15 @@ export async function getTimeline(): Promise<{
             });
         });
 
-        return { data: parsedData, error: null };
+        // 次の読み込みのためのカーソルを決定 (最後の要素の作成日時)
+        const nextCursor =
+            parsedData.length > 0
+                ? parsedData[parsedData.length - 1].created_at
+                : null;
+
+        return { data: parsedData, nextCursor, error: null };
     } catch (error) {
         // 予期せぬエラー (Zod パース失敗など) もドメインエラーへ変換
-        return { data: null, error: mapSupabaseError(error) };
+        return { data: null, nextCursor: null, error: mapSupabaseError(error) };
     }
 }

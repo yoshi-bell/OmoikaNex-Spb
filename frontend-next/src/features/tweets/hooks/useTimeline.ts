@@ -1,31 +1,45 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { getTimeline } from "@/features/tweets/api/get-timeline";
 import { TweetDomain } from "@/lib/schemas";
 import { AppError } from "@/types/error";
+import { APP_CONFIG } from "@/constants/config";
 
 /**
- * タイムライン取得用のカスタムフック
+ * タイムライン取得用のカスタムフック (無限スクロール対応)
  *
- * サーバー状態 (Server State) としてタイムラインを管理し、
- * キャッシュ、ローディング状態、エラー情報を UI コンポーネントに提供します。
+ * useInfiniteQuery を使用して、ページごとのデータを取得・保持します。
+ * スクロールに応じて fetchNextPage を呼び出すことで追加データを読み込みます。
  */
 export function useTimeline() {
-    return useQuery<{ data: TweetDomain[] | null; error: AppError | null }>({
-        // クエリキー: キャッシュの識別子として 'timeline' を使用
+    return useInfiniteQuery<{
+        data: TweetDomain[] | null;
+        nextCursor: string | null;
+        error: AppError | null;
+    }>({
+        // クエリキー
         queryKey: ["timeline"],
 
-        // クエリ関数: 先ほど作成した Repository を呼び出す
-        queryFn: async () => {
-            const result = await getTimeline();
-
-            // NOTE: React Query は throw されたエラーのみを error 状態として扱いますが、
-            // 本プロジェクトでは Repository が返す統一された AppError オブジェクトを
-            // そのまま UI に渡す設計を試行しています。
-            return result;
+        // クエリ関数 (pageParam にカーソルが渡される)
+        queryFn: async ({ pageParam }) => {
+            return await getTimeline(pageParam as string | undefined);
         },
 
-        // 取得したデータが 30 秒間は「新鮮 (fresh)」とみなし、
-        // その間は再取得を行わないように調整。SNS アプリの特性に合わせます。
+        // 初回ページ用のパラメータ
+        initialPageParam: undefined,
+
+        // 次のページのパラメータを決定するロジック
+        getNextPageParam: (lastPage) => {
+            // 取得件数が設定件数未満なら、次はないと判断
+            if (
+                lastPage.data &&
+                lastPage.data.length < APP_CONFIG.TWEETS_PER_PAGE
+            ) {
+                return undefined;
+            }
+            return lastPage.nextCursor;
+        },
+
+        // 取得したデータが 30 秒間は「新鮮 (fresh)」とみなす
         staleTime: 30 * 1000,
     });
 }
