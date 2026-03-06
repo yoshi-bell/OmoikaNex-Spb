@@ -1,8 +1,23 @@
-import { TweetDomain } from "@/lib/schemas";
+"use client";
+
+import { useState } from "react";
+import { TweetDomain, tweetFormSchema, type TweetFormType } from "@/lib/schemas";
 import Image from "next/image";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import { useDeleteTweet } from "@/features/tweets/hooks/useDeleteTweet";
 import { useToggleLike } from "@/features/tweets/hooks/useToggleLike";
+import { usePostTweet } from "@/features/tweets/hooks/usePostTweet";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/components/ui/button";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormMessage,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
 
 interface TweetCardProps {
     tweet: TweetDomain;
@@ -15,6 +30,19 @@ export function TweetCard({ tweet }: TweetCardProps) {
     const { user } = useAuthUser();
     const { mutate: deleteTweet, isPending: isDeleting } = useDeleteTweet();
     const { mutate: toggleLike } = useToggleLike();
+    const { mutate: postTweet, isPending: isPostingReply } = usePostTweet();
+
+    // 返信フォームの表示状態
+    const [isReplyOpen, setIsReplyOpen] = useState(false);
+
+    // 返信用フォームの初期化
+    const form = useForm<TweetFormType>({
+        resolver: zodResolver(tweetFormSchema),
+        defaultValues: {
+            content: "",
+            parent_id: Number(tweet.id),
+        },
+    });
 
     // 自分の投稿かどうかを判定 (文字列として比較することで確実に判定)
     const isOwnTweet = user && String(user.id) === String(tweet.user_id);
@@ -23,6 +51,17 @@ export function TweetCard({ tweet }: TweetCardProps) {
         if (window.confirm("この投稿を削除してもよろしいですか？")) {
             deleteTweet(tweet.id);
         }
+    };
+
+    const onReplySubmit = (values: TweetFormType) => {
+        postTweet(values, {
+            onSuccess: (result) => {
+                if (result.success) {
+                    form.reset();
+                    setIsReplyOpen(false);
+                }
+            },
+        });
     };
 
     return (
@@ -57,6 +96,29 @@ export function TweetCard({ tweet }: TweetCardProps) {
 
                 {/* アクションエリア (仕様: 左揃え配置) */}
                 <div className="mt-4 flex items-center gap-12 text-slate-500">
+                    {/* 返信 (コメント) */}
+                    <button
+                        onClick={() => setIsReplyOpen(!isReplyOpen)}
+                        className={`group flex items-center gap-2 transition-colors hover:text-indigo-400 ${
+                            isReplyOpen ? "text-indigo-400" : ""
+                        }`}
+                    >
+                        <div className="rounded-full transition-colors group-hover:bg-indigo-400/10">
+                            <Image
+                                src="/images/detail.png"
+                                alt="Reply"
+                                width={18}
+                                height={18}
+                                className={`brightness-0 invert transition-opacity ${
+                                    isReplyOpen ? "opacity-100" : "opacity-60"
+                                } group-hover:opacity-100`}
+                            />
+                        </div>
+                        <span className="text-xs font-medium">
+                            {tweet.replies_count}
+                        </span>
+                    </button>
+
                     {/* お気に入り (いいね) */}
                     <button
                         onClick={() => toggleLike(tweet.id)}
@@ -102,6 +164,59 @@ export function TweetCard({ tweet }: TweetCardProps) {
                         </button>
                     )}
                 </div>
+
+                {/* 返信フォーム (インライン展開) */}
+                {isReplyOpen && (
+                    <div className="mt-6 border-t border-slate-800 pt-6 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="flex gap-4">
+                            {/* ログインユーザーのアイコン */}
+                            <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-slate-800">
+                                <Image
+                                    src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(user?.id || "default")}`}
+                                    alt={user?.name || "User"}
+                                    width={40}
+                                    height={40}
+                                />
+                            </div>
+
+                            <div className="flex-1">
+                                <Form {...form}>
+                                    <form
+                                        onSubmit={form.handleSubmit(onReplySubmit)}
+                                        className="flex flex-col"
+                                    >
+                                        <FormField
+                                            control={form.control}
+                                            name="content"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormControl>
+                                                        <Textarea
+                                                            placeholder="返信をツイート"
+                                                            disabled={isPostingReply}
+                                                            className="min-h-[80px] resize-none border-none bg-transparent p-0 text-[15px] text-white placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-50"
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage className="text-red-400" />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <div className="mt-2 flex justify-end">
+                                            <Button
+                                                type="submit"
+                                                disabled={isPostingReply || !form.watch("content")}
+                                                className="rounded-full bg-indigo-600 px-6 py-1.5 text-sm font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+                                            >
+                                                {isPostingReply ? "送信中..." : "返信する"}
+                                            </Button>
+                                        </div>
+                                    </form>
+                                </Form>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

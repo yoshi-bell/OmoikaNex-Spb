@@ -31,9 +31,13 @@ export async function getTimeline(cursor?: string): Promise<{
         *,
         user:users(*),
         likes_count:likes(count),
-        user_likes:likes(user_id)
+        user_likes:likes(user_id),
+        replies_count:tweets!parent_id(count)
       `,
         );
+
+        // メインタイムラインには親がない投稿 (トップレベルツイート) のみを表示
+        query = query.is("parent_id", null);
 
         // cursor があればそれ以前のデータを取得 (created_at で比較)
         if (cursor) {
@@ -63,6 +67,7 @@ export async function getTimeline(cursor?: string): Promise<{
                 ...tweet,
                 likes_count: tweet.likes_count?.[0]?.count ?? 0,
                 is_liked: (tweet.user_likes?.length ?? 0) > 0,
+                replies_count: tweet.replies_count?.[0]?.count ?? 0,
             });
         });
 

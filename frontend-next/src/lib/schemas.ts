@@ -90,6 +90,8 @@ export const tweetSchema = z.object({
     // いいね情報
     likes_count: z.number().default(0),
     is_liked: z.boolean().default(false),
+    // 返信情報
+    replies_count: z.number().default(0),
 });
 
 /**

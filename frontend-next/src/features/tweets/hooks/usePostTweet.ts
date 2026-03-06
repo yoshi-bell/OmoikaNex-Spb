@@ -17,9 +17,12 @@ export function usePostTweet() {
     mutationFn: (values: TweetFormType) => postTweet(values),
     
     // 成功時の処理
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
       if (result.success) {
-        toast.success('シェアしました')
+        // 返信かどうかに応じてメッセージを切り替える
+        const message = variables.parent_id ? '返信しました' : 'シェアしました'
+        toast.success(message)
+        
         // 'timeline' というキーを持つクエリを無効化し、再取得をトリガーする
         queryClient.invalidateQueries({ queryKey: ['timeline'] })
       } else {
