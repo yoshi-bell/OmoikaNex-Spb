@@ -19,14 +19,23 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 
+import { useRouter } from "next/navigation";
+
 interface TweetCardProps {
     tweet: TweetDomain;
+    isLinkable?: boolean;
+    isReply?: boolean;
 }
 
 /**
  * ツイートカード・コンポーネント (ダークモード仕様)
  */
-export function TweetCard({ tweet }: TweetCardProps) {
+export function TweetCard({
+    tweet,
+    isLinkable = true,
+    isReply = false,
+}: TweetCardProps) {
+    const router = useRouter();
     const { user } = useAuthUser();
     const { mutate: deleteTweet, isPending: isDeleting } = useDeleteTweet();
     const { mutate: toggleLike } = useToggleLike();
@@ -64,8 +73,19 @@ export function TweetCard({ tweet }: TweetCardProps) {
         });
     };
 
+    const handleCardClick = () => {
+        if (isLinkable) {
+            router.push(`/tweet/${tweet.id}`);
+        }
+    };
+
     return (
-        <div className="flex gap-4 border-b border-slate-800 p-6 transition-colors hover:bg-white/5">
+        <div
+            onClick={handleCardClick}
+            className={`flex gap-4 border-b border-slate-800 p-6 transition-colors ${
+                isLinkable ? "cursor-pointer hover:bg-white/5" : ""
+            } ${isReply ? "bg-black/20 border-l-2 border-l-indigo-500/30" : ""}`}
+        >
             {/* ユーザーアイコン */}
             <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-full bg-slate-800">
                 <Image
@@ -98,7 +118,10 @@ export function TweetCard({ tweet }: TweetCardProps) {
                 <div className="mt-4 flex items-center gap-12 text-slate-500">
                     {/* 返信 (コメント) */}
                     <button
-                        onClick={() => setIsReplyOpen(!isReplyOpen)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsReplyOpen(!isReplyOpen);
+                        }}
                         className={`group flex items-center gap-2 transition-colors hover:text-indigo-400 ${
                             isReplyOpen ? "text-indigo-400" : ""
                         }`}
@@ -121,7 +144,10 @@ export function TweetCard({ tweet }: TweetCardProps) {
 
                     {/* お気に入り (いいね) */}
                     <button
-                        onClick={() => toggleLike(tweet.id)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            toggleLike(tweet.id);
+                        }}
                         className={`group flex items-center gap-2 transition-colors hover:text-rose-500 ${
                             tweet.is_liked ? "text-rose-500" : ""
                         }`}
@@ -147,7 +173,10 @@ export function TweetCard({ tweet }: TweetCardProps) {
                     {/* 削除 (自分自身の投稿のみ表示) */}
                     {isOwnTweet && (
                         <button
-                            onClick={handleDelete}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete();
+                            }}
                             disabled={isDeleting}
                             className="group flex items-center gap-2 transition-colors hover:text-red-500 disabled:opacity-50"
                         >
@@ -167,7 +196,10 @@ export function TweetCard({ tweet }: TweetCardProps) {
 
                 {/* 返信フォーム (インライン展開) */}
                 {isReplyOpen && (
-                    <div className="mt-6 border-t border-slate-800 pt-6 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-6 border-t border-slate-800 pt-6 animate-in fade-in slide-in-from-top-2 duration-200"
+                    >
                         <div className="flex gap-4">
                             {/* ログインユーザーのアイコン */}
                             <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-slate-800">
