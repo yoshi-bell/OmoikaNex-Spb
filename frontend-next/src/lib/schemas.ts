@@ -92,6 +92,8 @@ export const tweetSchema = z.object({
     is_liked: z.boolean().default(false),
     // 返信情報
     replies_count: z.number().default(0),
+    // フォロー情報
+    is_following: z.boolean().default(false),
 });
 
 /**

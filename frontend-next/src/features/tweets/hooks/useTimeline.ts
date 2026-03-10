@@ -10,18 +10,18 @@ import { APP_CONFIG } from "@/constants/config";
  * useInfiniteQuery を使用して、ページごとのデータを取得・保持します。
  * スクロールに応じて fetchNextPage を呼び出すことで追加データを読み込みます。
  */
-export function useTimeline() {
+export function useTimeline(mode: "all" | "following" = "all") {
     return useInfiniteQuery<{
         data: TweetDomain[] | null;
         nextCursor: string | null;
         error: AppError | null;
     }>({
-        // クエリキー
-        queryKey: ["timeline"],
+        // クエリキーに mode を含めることで、タブごとにキャッシュを分離
+        queryKey: ["timeline", mode],
 
         // クエリ関数 (pageParam にカーソルが渡される)
         queryFn: async ({ pageParam }) => {
-            return await getTimeline(pageParam as string | undefined);
+            return await getTimeline(pageParam as string | undefined, mode);
         },
 
         // 初回ページ用のパラメータ
