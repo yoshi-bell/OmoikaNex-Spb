@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { tweetFormSchema, type TweetFormType } from "@/lib/schemas";
+import { type TweetFormType } from "@/lib/schemas";
 import { mapSupabaseError } from "@/lib/error-mapping";
 import { AppError } from "@/types/error";
 

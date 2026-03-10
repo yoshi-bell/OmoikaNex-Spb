@@ -1,5 +1,5 @@
 import { AuthError } from "@supabase/supabase-js";
-import { AppError, AppErrorType } from "@/types/error";
+import { AppError } from "@/types/error";
 
 /**
  * Supabase からのエラーを OmoikaNex の共通エラー形式に変換します。

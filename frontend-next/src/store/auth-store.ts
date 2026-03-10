@@ -11,11 +11,15 @@ interface AuthState {
     isAuthenticated: boolean;
     // 初期ロード中かどうかのフラグ
     isInitialLoading: boolean;
+    // 初期化（Supabaseとの初回の疎通）が開始/完了したかどうかのフラグ
+    isInitialized: boolean;
 
     // アクション: ユーザー情報のセット
     setUser: (user: UserDomain | null) => void;
     // アクション: ログアウト処理（状態のリセット）
     clearAuth: () => void;
+    // アクション: 初期化開始フラグのセット
+    setInitialized: (value: boolean) => void;
 }
 
 /**
@@ -25,12 +29,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     user: null,
     isAuthenticated: false,
     isInitialLoading: true,
+    isInitialized: false,
 
     setUser: (user) =>
         set({
             user,
             isAuthenticated: !!user,
             isInitialLoading: false,
+            isInitialized: true,
         }),
 
     clearAuth: () =>
@@ -38,5 +44,8 @@ export const useAuthStore = create<AuthState>((set) => ({
             user: null,
             isAuthenticated: false,
             isInitialLoading: false,
+            isInitialized: true,
         }),
+
+    setInitialized: (value) => set({ isInitialized: value }),
 }));
