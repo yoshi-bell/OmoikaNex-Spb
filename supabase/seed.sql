@@ -2,8 +2,6 @@
 
 -- 1. テストユーザーの作成 (auth.users)
 -- パスワードはすべて "password123" です。
--- confirmed_at は DB の制約により手動挿入が制限されているため除外します。
--- 代わりに email_confirmed_at を指定することで、ログイン可能な「認証済みユーザー」として扱われます。
 INSERT INTO auth.users (
   id, 
   email, 
@@ -22,7 +20,6 @@ INSERT INTO auth.users (
   phone_change,
   phone_change_token,
   reauthentication_token,
-  -- 必須タイムスタンプ
   created_at,
   updated_at
 )
@@ -44,7 +41,8 @@ VALUES
   )
 ON CONFLICT (id) DO NOTHING;
 
--- 2. 大量ツイートの生成 (public.tweets)
+-- 2. 親ツイート (Top-level Tweets) の生成
+-- 投稿時間を1時間ずつずらして 60件作成
 INSERT INTO public.tweets (user_id, content, created_at)
 SELECT 
   CASE (i % 3)
@@ -55,3 +53,26 @@ SELECT
   'これはテスト投稿の ' || i || ' 件目です。無限スクロールのテスト中！' as content,
   now() - (i || ' hours')::interval as created_at
 FROM generate_series(1, 60) AS i;
+
+-- 3. 返信ツイート (Replies) の生成
+-- 最新の親ツイートを1つ特定し、それに対して 30件の返信を紐付ける
+DO $$
+DECLARE
+    parent_id_val bigint;
+BEGIN
+    -- 最新の親ツイートIDを取得
+    SELECT id INTO parent_id_val FROM public.tweets WHERE parent_id IS NULL ORDER BY created_at DESC LIMIT 1;
+
+    -- そのツイートに対して30件の返信を作成
+    INSERT INTO public.tweets (user_id, content, parent_id, created_at)
+    SELECT 
+      CASE (j % 3)
+        WHEN 0 THEN '00000000-0000-0000-0000-000000000001'::uuid
+        WHEN 1 THEN '00000000-0000-0000-0000-000000000002'::uuid
+        ELSE '00000000-0000-0000-0000-000000000003'::uuid
+      END as user_id,
+      '返信テスト ' || j || ' 件目。詳細画面の無限スクロールを検証しています。' as content,
+      parent_id_val as parent_id,
+      now() - (j || ' minutes')::interval as created_at
+    FROM generate_series(1, 30) AS j;
+END $$;
