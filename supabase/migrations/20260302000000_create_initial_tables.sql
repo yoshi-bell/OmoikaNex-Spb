@@ -11,6 +11,7 @@ create table public.users (
   name text not null,
   email text unique not null,
   profile_text varchar(160),
+  avatar_url text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -124,3 +125,30 @@ $$ language plpgsql security definer set search_path = public;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- ==========================================
+-- 6. Storage: アバター画像保存
+-- ==========================================
+
+-- Storage バケットの作成 (avatars)
+-- insert into storage.buckets (id, name, public) 
+-- values ('avatars', 'avatars', true)
+-- on conflict (id) do nothing;
+-- ※ ローカル環境で SQL によるバケット作成ができないケースに備え、CLI config または手動を推奨する場合があるが、
+--   ここでは IaC として明文化する。
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage RLS ポリシー
+-- 1. 誰でも閲覧可能
+CREATE POLICY "アバター画像は誰でも閲覧可能" ON storage.objects
+  FOR SELECT USING (bucket_id = 'avatars');
+
+-- 2. 認証済みユーザーは自分のフォルダにのみアップロード・更新・削除可能
+-- フォルダ名をユーザーID (auth.uid()) と一致させる設計
+CREATE POLICY "ユーザーは自身のアバターのみ管理可能" ON storage.objects
+  FOR ALL TO authenticated 
+  USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = (select auth.uid())::text)
+  WITH CHECK (bucket_id = 'avatars' AND (storage.foldername(name))[1] = (select auth.uid())::text);

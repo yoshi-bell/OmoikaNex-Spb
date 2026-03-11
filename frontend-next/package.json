@@ -7,7 +7,7 @@
         "build": "next build",
         "start": "next start",
         "lint": "eslint",
-        "codegen": "openapi-typescript http://localhost/docs/api.json -o src/types/schema.d.ts"
+        "codegen": "npx supabase gen types typescript --local > src/types/database.types.ts"
     },
     "dependencies": {
         "@hookform/resolvers": "^5.2.2",
