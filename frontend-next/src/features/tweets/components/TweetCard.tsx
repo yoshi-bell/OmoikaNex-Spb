@@ -12,7 +12,7 @@ import { useDeleteTweet } from "@/features/tweets/hooks/useDeleteTweet";
 import { useToggleLike } from "@/features/tweets/hooks/useToggleLike";
 import { usePostTweet } from "@/features/tweets/hooks/usePostTweet";
 import { useToggleFollow } from "@/features/follows/hooks/useToggleFollow";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { useRouter } from "next/navigation";
+import { formatDistanceToNow } from "date-fns";
+import { ja } from "date-fns/locale";
 
 interface TweetCardProps {
     tweet: TweetDomain;
@@ -58,6 +60,12 @@ export function TweetCard({
             content: "",
             parent_id: Number(tweet.id),
         },
+    });
+
+    // 警告回避のため、form.watch ではなく useWatch を使用
+    const replyContent = useWatch({
+        control: form.control,
+        name: "content",
     });
 
     // 自分の投稿かどうかを判定 (文字列として比較することで確実に判定)
@@ -114,8 +122,12 @@ export function TweetCard({
                             @{tweet.user_id.slice(0, 8)}
                         </span>
                         <span className="text-sm text-slate-600">·</span>
-                        {/* TODO: Relative time format */}
-                        <span className="text-sm text-slate-500">1時間</span>
+                        <span className="text-sm text-slate-500">
+                            {formatDistanceToNow(new Date(tweet.created_at), {
+                                addSuffix: true,
+                                locale: ja,
+                            })}
+                        </span>
                     </div>
 
                     {/* フォローボタン (自分以外の投稿のみ表示) */}
@@ -274,7 +286,7 @@ export function TweetCard({
                                                 type="submit"
                                                 disabled={
                                                     isPostingReply ||
-                                                    !form.watch("content")
+                                                    !replyContent
                                                 }
                                                 className="rounded-full bg-indigo-600 px-6 py-1.5 text-sm font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
                                             >
