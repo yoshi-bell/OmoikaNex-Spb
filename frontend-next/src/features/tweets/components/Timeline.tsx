@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTimeline } from "@/features/tweets/hooks/useTimeline";
 import { TweetCard } from "./TweetCard";
+import { TweetCardSkeleton } from "./TweetCardSkeleton";
 import { useInView } from "react-intersection-observer";
 
 /**
@@ -74,13 +75,12 @@ export function Timeline() {
 
             {/* 2. コンテンツエリア (状態に応じて切り替え) */}
             
-            {/* ローディング状態 */}
+            {/* ローディング状態 (スケルトン表示) */}
             {isLoading ? (
-                <div className="flex flex-col items-center justify-center p-10 space-y-4">
-                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#4f46e5] border-t-transparent" />
-                    <p className="text-gray-500 text-sm font-medium">
-                        タイムラインを読み込み中...
-                    </p>
+                <div className="flex flex-col">
+                    <TweetCardSkeleton />
+                    <TweetCardSkeleton />
+                    <TweetCardSkeleton />
                 </div>
             ) : isError ? (
                 /* エラー状態 */
@@ -112,19 +112,20 @@ export function Timeline() {
                         <TweetCard key={String(tweet.id)} tweet={tweet} />
                     ))}
 
-                    {/* 最下部の読み込み監視・ローダー */}
-                    <div ref={ref} className="p-10 flex justify-center">
+                    {/* 最下部の読み込み監視・スケルトン表示 */}
+                    <div ref={ref} className="flex flex-col">
                         {isFetchingNextPage ? (
-                            <div className="flex flex-col items-center space-y-2">
-                                <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#4f46e5] border-t-transparent" />
-                                <p className="text-xs text-gray-500">読み込み中...</p>
-                            </div>
+                            <TweetCardSkeleton />
                         ) : hasNextPage ? (
-                            <span className="text-xs text-gray-500">さらに読み込む</span>
+                            <div className="p-10 text-center">
+                                <span className="text-sm text-slate-500">さらに読み込む</span>
+                            </div>
                         ) : (
-                            <p className="text-sm text-gray-500 font-medium">
-                                すべての投稿を表示しました
-                            </p>
+                            <div className="p-12 text-center">
+                                <p className="text-sm text-slate-500 font-bold">
+                                    すべての投稿を表示しました
+                                </p>
+                            </div>
                         )}
                     </div>
                 </>

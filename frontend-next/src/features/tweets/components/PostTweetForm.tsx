@@ -36,6 +36,8 @@ export function PostTweetForm() {
             onSuccess: (result) => {
                 if (result.success) {
                     form.reset();
+                    // 投稿後、最新のツイートを確認できるよう最上部へスクロール
+                    window.scrollTo({ top: 0, behavior: "smooth" });
                 }
             },
         });
