@@ -30,6 +30,9 @@
     - 将来的な「Next.js + Laravel構成（ON-Plan Phase B）」への移植を円滑にするため、Next.jsのUIコンポーネント内にSupabase特有のコードを直接書かず、Repositoryパターンによるカプセル化を徹底すること。
 4.  **品質の維持 (Testing & Verification):**
     - 新機能の開発にあたっては、その品質を検証するため、対応するテストを作成・実行し、安定した動作確認の基盤を構築すること。
+5.  **AI駆動開発の推進 (AI-Driven Development):**
+    - AIエージェントとの共創をプロジェクトの核とし、`GEMINI.md` を案内図として活用すること。
+    - 全ての AI コミットには `Co-authored-by` 署名を付与し、開発実績を透明化すること。
 
 ---
 
@@ -91,3 +94,4 @@ AIエージェントは、現在のタスクに応じて以下のファイルを
 - **`06_TESTING_GUIDE.md`:** テスト指針。
 - **`07_DEV_LOG.md`:** 開発ログ。
 - **`01_AGENT_RECOVERY_MANUAL.md`:** エージェント復旧マニュアル。
+- **`GEMINI.md`:** (プロジェクトルート) AI エージェント用案内図。
