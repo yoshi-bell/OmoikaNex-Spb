@@ -15,6 +15,7 @@ import { useToggleFollow } from "@/features/follows/hooks/useToggleFollow";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import {
     Form,
     FormControl,
@@ -27,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
+import { getAvatarUrl } from "@/lib/utils";
 
 interface TweetCardProps {
     tweet: TweetDomain;
@@ -102,25 +104,35 @@ export function TweetCard({
             } ${isReply ? "bg-black/20 border-l-2 border-l-indigo-500/30" : ""}`}
         >
             {/* ユーザーアイコン */}
-            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-full bg-slate-800">
+            <Link
+                href={`/profile/${tweet.user_id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-full bg-slate-800 transition-opacity hover:opacity-80"
+            >
                 <Image
-                    src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(tweet.user_id)}`}
+                    src={getAvatarUrl(tweet.user?.avatar_url)}
                     alt={tweet.user?.name || "User"}
                     width={48}
                     height={48}
                 />
-            </div>
+            </Link>
 
             {/* ツイート内容 */}
             <div className="flex flex-1 flex-col">
                 <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                        <span className="font-bold text-white">
+                    <Link
+                        href={`/profile/${tweet.user_id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-2 group"
+                    >
+                        <span className="font-bold text-white group-hover:underline">
                             {tweet.user?.name || "Unknown"}
                         </span>
                         <span className="text-sm text-slate-500">
                             @{tweet.user_id.slice(0, 8)}
                         </span>
+                    </Link>
+                    <div className="flex items-center gap-2">
                         <span className="text-sm text-slate-600">·</span>
                         <span className="text-sm text-slate-500">
                             {formatDistanceToNow(new Date(tweet.created_at), {
@@ -251,12 +263,13 @@ export function TweetCard({
                             {/* ログインユーザーのアイコン */}
                             <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-slate-800">
                                 <Image
-                                    src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(user?.id || "default")}`}
+                                    src={getAvatarUrl(user?.avatar_url)}
                                     alt={user?.name || "User"}
                                     width={40}
                                     height={40}
                                 />
                             </div>
+
 
                             <div className="flex-1">
                                 <Form {...form}>
