@@ -7,7 +7,8 @@
         "build": "next build",
         "start": "next start",
         "lint": "eslint",
-        "codegen": "npx supabase gen types typescript --local > src/types/database.types.ts"
+        "codegen": "npx supabase gen types typescript --local > src/types/database.types.ts",
+        "db:reset": "cd .. && npx supabase db reset && ./supabase/seed-storage.sh"
     },
     "dependencies": {
         "@hookform/resolvers": "^5.2.2",

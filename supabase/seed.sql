@@ -76,3 +76,6 @@ BEGIN
       now() - (j || ' minutes')::interval as created_at
     FROM generate_series(1, 30) AS j;
 END $$;
+
+-- 4. 全ユーザーの avatar_url を ID に基づいて一括更新 (相対パスのみ保存)
+UPDATE public.users SET avatar_url = id || '/avatar.png';

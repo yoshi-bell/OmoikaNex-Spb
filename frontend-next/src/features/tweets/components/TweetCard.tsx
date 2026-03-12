@@ -270,11 +270,12 @@ export function TweetCard({
                                 />
                             </div>
 
-
                             <div className="flex-1">
                                 <Form {...form}>
                                     <form
-                                        onSubmit={form.handleSubmit(onReplySubmit)}
+                                        onSubmit={form.handleSubmit(
+                                            onReplySubmit,
+                                        )}
                                         className="flex flex-col"
                                     >
                                         <FormField
@@ -285,7 +286,9 @@ export function TweetCard({
                                                     <FormControl>
                                                         <Textarea
                                                             placeholder="返信をツイート"
-                                                            disabled={isPostingReply}
+                                                            disabled={
+                                                                isPostingReply
+                                                            }
                                                             className="min-h-[80px] resize-none border-none bg-transparent p-0 text-[15px] text-white placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-50"
                                                             {...field}
                                                         />

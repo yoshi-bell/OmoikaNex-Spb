@@ -54,12 +54,9 @@
 
 ---
 
-## 📦 環境構築
+## 🚀 クイックスタート (ローカル開発環境)
 
-### 前提条件
-- Node.js (v20以上)
-- Git
-- Supabase アカウント
+本プロジェクトは Docker を使用したローカル開発を推奨しています。以下の手順で、データベースとストレージを含む全ての環境が即座に構築されます。
 
 ### 1. セットアップ
 
@@ -72,36 +69,64 @@ cd OmoikaNex-Spb/frontend-next
 npm install
 
 # .env.local の作成
-# 以下の内容で作成し、Supabase の Project URL と Anon Key を設定してください。
-# NEXT_PUBLIC_SUPABASE_URL=your_project_url
-# NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+# ローカル環境（Docker）用のデフォルト値が設定されており、そのままで動作します
 cp .env.example .env.local
 ```
 
-### 2. データベースの構築と型同期
+### 2. 環境の自動構築 (DB & Storage)
+
+以下のコマンド 1 つで、最新のスキーマ反映、テストデータの投入、プロフィール画像の実体アップロードが完了します。
 
 ```bash
-# プロジェクトの初期化と紐付け
+# frontend-next ディレクトリにて実行
+npm run db:reset
+```
+
+### 3. アプリケーションの起動
+
+```bash
+npm run dev
+```
+`http://localhost:3000` にアクセスし、[テストアカウント](#-開発用テストアカウント-seed-data)でログインしてください。
+
+---
+
+## 🌐 クラウド環境 (Supabase.co) へのデプロイ
+
+クラウド上の Supabase プロジェクトを利用する場合は、以下の手順に従ってください。
+
+### 1. プロジェクトの紐付けと反映
+```bash
 npx supabase login
 npx supabase link --project-ref your_project_id
 
-# マイグレーションの反映 (テーブル・ポリシー作成)
+# クラウド DB へスキーマを反映
 npx supabase db push
-
-# TypeScript 型定義の自動生成
-npm run codegen
 ```
 
-### 3. Supabase ダッシュボードでの手動設定 (重要)
-現在、CLI が未対応の項目について、以下の設定をダッシュボードから手動で行ってください。
+### 2. 環境変数の設定 (.env.local)
+クラウドプロジェクトの URL と Anon Key を設定してください。
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
 
+### 3. ダッシュボードでの手動設定 (重要)
+クラウド環境では、以下の設定をダッシュボードから行う必要があります。
 1.  **Authentication > Providers > Email** を開く。
 2.  **Confirm email** を **Off** に変更して保存する。
-    - ※ これを行わないと、会員登録時に即時ログインできずエラーとなります。
+    - ※ オフにしない場合、登録時にメール認証が必要となり即時ログインできません。
+
+### 4. 型定義の同期
+スキーマ変更時は、以下のコマンドで TypeScript 型定義を更新してください。
+```bash
+npm run codegen
+```
 
 ---
 
 ## 🔑 開発用テストアカウント (Seed Data)
+
 
 ローカル環境（Docker）のデータベースには、テスト用のダミーデータが既に投入されています。以下のどのアカウントでもログイン可能です。
 

@@ -7,17 +7,22 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * プロフィール画像の URL を解決するヘルパー関数
- * 将来の Laravel 移行 (Phase B) を見据え、画像パスの構築を一元管理します。
  * 
- * @param avatarUrl データベースに保存されている画像パス (URL)
+ * @param avatarPath データベースに保存されている画像パス (例: [user_id]/avatar.png)
  * @returns 表示用の完全な画像 URL、またはデフォルト画像 (/images/profile.png)
  */
-export function getAvatarUrl(avatarUrl?: string | null): string {
-  if (!avatarUrl) {
+export function getAvatarUrl(avatarPath?: string | null): string {
+  if (!avatarPath) {
     return "/images/profile.png";
   }
 
-  // 現時点 (Supabase版) では保存された URL をそのまま返すが、
-  // 将来の Laravel 移行時にはここでドメインの付与などを一括制御する
-  return avatarUrl;
+  // すでにフルURL（http...）で始まっている場合はそのまま返す（下位互換性のため）
+  if (avatarPath.startsWith("http")) {
+    return avatarPath;
+  }
+
+  // 相対パスの場合は Supabase の公開 URL を付加
+  // 形式: [SupabaseURL]/storage/v1/object/public/avatars/[path]
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  return `${supabaseUrl}/storage/v1/object/public/avatars/${avatarPath}`;
 }

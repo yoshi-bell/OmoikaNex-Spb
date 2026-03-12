@@ -1,0 +1,5 @@
+# Debug and log files
+*.log
+full_status.txt
+investigate_storage.sh
+.supabase/
