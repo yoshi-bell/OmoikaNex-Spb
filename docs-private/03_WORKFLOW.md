@@ -63,6 +63,10 @@
 #### ステップ 4: Gitコミット
 
 - **言語:** 日本語で記述すること (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:` プレフィックスを使用)。
+- **AI 共同著作者の明記 (Findy 対策):** AI エージェント（Gemini CLI 等）が作成したコミットには、必ず末尾に以下の署名（空行を挟む）を含めること。
+  ```text
+  Co-authored-by: Gemini CLI <gemini-cli@google.com>
+  ```
 
 ---
 
