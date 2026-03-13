@@ -89,6 +89,7 @@ export const userSchema = z.object({
     avatar_url: z.string().nullable().optional(),
     created_at: z.string(),
     updated_at: z.string().nullable().optional(),
+    is_following: z.boolean().default(false),
 });
 
 /**

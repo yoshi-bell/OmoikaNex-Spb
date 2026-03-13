@@ -5,6 +5,8 @@ import { type TweetDomain } from "@/lib/schemas";
 import { toast } from "sonner";
 import { AppError } from "@/types/error";
 
+import { UserProfileResponse } from "@/features/users/api/get-profile";
+
 /**
  * フォローのトグル (追加・解除) のためのカスタムフック
  *
@@ -38,6 +40,7 @@ export function useToggleFollow() {
         onMutate: async (targetUserId: UserId) => {
             await queryClient.cancelQueries({ queryKey: ["timeline"] });
             await queryClient.cancelQueries({ queryKey: ["tweets"] });
+            await queryClient.cancelQueries({ queryKey: ["profile"] });
 
             // 1. タイムライン (無限スクロール) の更新
             const previousTimelines = queryClient.getQueriesData<
@@ -97,6 +100,27 @@ export function useToggleFollow() {
                 }
             );
 
+            // 3. プロフィール詳細 ["profile"] の更新
+            queryClient.setQueriesData<UserProfileResponse>(
+                { queryKey: ["profile"] },
+                (old) => {
+                    if (!old || !old.user) return old;
+                    if (String(old.user.id) === String(targetUserId)) {
+                        return {
+                            ...old,
+                            user: {
+                                ...old.user,
+                                is_following: !old.user.is_following,
+                                follower_count: old.user.is_following 
+                                    ? Math.max(0, old.user.follower_count - 1)
+                                    : old.user.follower_count + 1
+                            }
+                        };
+                    }
+                    return old;
+                }
+            );
+
             return { previousTimelines, previousTweets };
         },
 
@@ -111,12 +135,14 @@ export function useToggleFollow() {
                     queryClient.setQueryData(queryKey, data);
                 });
             }
+            queryClient.invalidateQueries({ queryKey: ["profile"] });
             toast.error("フォローの反映に失敗しました");
         },
 
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ["timeline"] });
             queryClient.invalidateQueries({ queryKey: ["tweets"] });
+            queryClient.invalidateQueries({ queryKey: ["profile"] });
         },
     });
 }

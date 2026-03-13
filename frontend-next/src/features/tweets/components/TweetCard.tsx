@@ -11,7 +11,6 @@ import { useAuthUser } from "@/hooks/useAuthUser";
 import { useDeleteTweet } from "@/features/tweets/hooks/useDeleteTweet";
 import { useToggleLike } from "@/features/tweets/hooks/useToggleLike";
 import { usePostTweet } from "@/features/tweets/hooks/usePostTweet";
-import { useToggleFollow } from "@/features/follows/hooks/useToggleFollow";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -49,8 +48,6 @@ export function TweetCard({
     const { mutate: deleteTweet, isPending: isDeleting } = useDeleteTweet();
     const { mutate: toggleLike } = useToggleLike();
     const { mutate: postTweet, isPending: isPostingReply } = usePostTweet();
-    const { mutate: toggleFollow, isPending: isFollowPending } =
-        useToggleFollow();
 
     // 返信フォームの表示状態
     const [isReplyOpen, setIsReplyOpen] = useState(false);
@@ -141,32 +138,6 @@ export function TweetCard({
                             })}
                         </span>
                     </div>
-
-                    {/* フォローボタン (自分以外の投稿のみ表示) */}
-                    {user && !isOwnTweet && (
-                        <Button
-                            variant={
-                                tweet.is_following ? "outline" : "secondary"
-                            }
-                            size="sm"
-                            disabled={isFollowPending}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                toggleFollow(tweet.user_id);
-                            }}
-                            className={`h-8 rounded-full px-4 text-xs font-bold transition-all ${
-                                tweet.is_following
-                                    ? "border-slate-700 bg-transparent text-white hover:border-red-900 hover:bg-red-900/10 hover:text-red-500"
-                                    : "bg-white text-black hover:bg-white/90"
-                            }`}
-                        >
-                            {tweet.is_following ? (
-                                <span className="after:content-['フォロー中'] hover:after:content-['解除']" />
-                            ) : (
-                                "フォロー"
-                            )}
-                        </Button>
-                    )}
                 </div>
 
                 <p className="mt-2 whitespace-pre-wrap text-[15px] leading-normal text-gray-100">

@@ -4,6 +4,7 @@ import { TweetId } from "@/types/brands";
 import { type TweetDomain } from "@/lib/schemas";
 import { toast } from "sonner";
 import { AppError } from "@/types/error";
+import { UserProfileResponse } from "@/features/users/api/get-profile";
 
 /**
  * 「いいね」トグルのためのカスタムフック
@@ -93,10 +94,9 @@ export function useToggleLike() {
             );
 
             // 4. プロフィール画面 ["profile"] を含む全クエリを更新
-            queryClient.setQueriesData<any>(
+            queryClient.setQueriesData<UserProfileResponse>(
                 { queryKey: ["profile"] },
-                (old: any) => {
-                    // getUserProfile の戻り値構造 (user, tweets) に対応
+                (old) => {
                     if (!old || !old.tweets) return old;
                     return {
                         ...old,

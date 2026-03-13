@@ -8,6 +8,8 @@ import {
 } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
 import { cache } from "react";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { Database } from "@/types/database.types";
 
 /**
  * プロフィール画面用のユーザー詳細データ型
@@ -21,18 +23,28 @@ export interface UserProfileResponse {
 }
 
 /**
- * 特定のユーザーのプロフィール情報と投稿一覧を取得する (Repository - Server Side)
- * 将来の Laravel 移行 (Phase B) を見据え、内部でデータソース（現在は Supabase）を完全に隠蔽します。
- * 
- * @param userId 取得対象のユーザーID
- * @returns ユーザー詳細とツイート一覧
+ * 取得した生のツイートデータの構造を定義
+ * (TypeScript の推論が困難な複雑なリレーションを型安全に扱うため)
  */
-export const getUserProfile = cache(async (
-    userId: string
-): Promise<UserProfileResponse> => {
-    // 内部でひっそりとサーバー用クライアントを生成 (UI側には意識させない)
-    const supabase = await createClient();
+interface RawProfileTweet {
+    id: number;
+    user_id: string;
+    parent_id: number | null;
+    content: string;
+    created_at: string;
+    updated_at: string;
+    user: Record<string, unknown> | null;
+    likes_count: { count: number }[];
+    replies_count: { count: number }[];
+}
 
+/**
+ * プロフィール情報を取得する純粋なロジック (Repository 内部用)
+ */
+export async function fetchUserProfile(
+    supabase: SupabaseClient<Database>,
+    userId: string
+): Promise<UserProfileResponse> {
     // 1. ユーザー基本情報の取得
     const { data: userRaw, error: userError } = await supabase
         .from("users")
@@ -44,15 +56,29 @@ export const getUserProfile = cache(async (
         throw new Error(userError?.message || "User not found");
     }
 
-    // 2. フォロー・フォロワー数のカウント (並列実行)
-    const [followingRes, followerRes] = await Promise.all([
+    // 2. 統計カウントと、ログインユーザー自身の情報を並列取得
+    const [{ data: authData }, followingRes, followerRes] = await Promise.all([
+        supabase.auth.getUser(),
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", userId),
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("followee_id", userId),
     ]);
 
+    const authUser = authData?.user;
+
+    // ログインユーザーがこのユーザーをフォローしているか確認
+    let isFollowing = false;
+    if (authUser && authUser.id !== userId) {
+        const { data: followRecord } = await supabase
+            .from("follows")
+            .select("*")
+            .eq("follower_id", authUser.id)
+            .eq("followee_id", userId)
+            .maybeSingle();
+        isFollowing = !!followRecord;
+    }
+
     // 3. ユーザー投稿一覧の取得
-    // タイムラインと同様のロジックで、リレーションデータを含めて取得
-    const { data: tweetsRaw, error: tweetsError } = await supabase
+    const { data, error: tweetsError } = await supabase
         .from("tweets")
         .select(`
             *,
@@ -67,12 +93,12 @@ export const getUserProfile = cache(async (
         throw new Error(tweetsError.message);
     }
 
-    // ログインユーザー自身の情報を取得 (いいね状態の判定用)
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    
+    // 不透明なレスポンスデータをインターフェースへ安全にキャスト
+    const tweetsRaw = (data as unknown as RawProfileTweet[]) || [];
+
     // いいね状態を取得 (今表示するツイートのみに絞り込んで N+1 問題を予防)
     let myLikes: number[] = [];
-    if (authUser && tweetsRaw && tweetsRaw.length > 0) {
+    if (authUser && tweetsRaw.length > 0) {
         const currentTweetIds = tweetsRaw.map(t => t.id);
         const { data: likes } = await supabase
             .from("likes")
@@ -83,15 +109,17 @@ export const getUserProfile = cache(async (
     }
 
     // 4. ドメインモデルへのマッピング
-    const userDomain = userSchema.parse(userRaw);
-    const tweetsDomain = (tweetsRaw || []).map(tweet => {
+    const userDomain = userSchema.parse({
+        ...userRaw,
+        is_following: isFollowing,
+    });
+
+    const tweetsDomain = tweetsRaw.map(tweet => {
         return tweetSchema.parse({
             ...tweet,
             likes_count: tweet.likes_count?.[0]?.count || 0,
             replies_count: tweet.replies_count?.[0]?.count || 0,
             is_liked: myLikes.includes(tweet.id),
-            // プロフィール画面では常にそのユーザーの投稿なので、フォロー状態は外部から制御するか
-            // 必要に応じてここで解決する
             is_following: false 
         });
     });
@@ -104,4 +132,14 @@ export const getUserProfile = cache(async (
         },
         tweets: tweetsDomain,
     };
+}
+
+/**
+ * プロフィール取得 (Server Side 専用 - cache対応)
+ */
+export const getUserProfile = cache(async (
+    userId: string
+): Promise<UserProfileResponse> => {
+    const supabase = await createClient();
+    return fetchUserProfile(supabase, userId);
 });

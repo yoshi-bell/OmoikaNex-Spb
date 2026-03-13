@@ -13,6 +13,7 @@ import { useAuthUser } from "@/hooks/useAuthUser";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { useToggleFollow } from "@/features/follows/hooks/useToggleFollow";
 
 interface ProfileClientViewProps {
     initialData: UserProfileResponse;
@@ -28,6 +29,7 @@ export function ProfileClientView({ initialData, userId }: ProfileClientViewProp
     const router = useRouter();
     const { user: loggedInUser } = useAuthUser();
     const [activeTab, setActiveTab] = useState<TabType>("posts");
+    const { mutate: toggleFollow, isPending: isFollowPending } = useToggleFollow();
 
     // 1. プロフィール基本データと投稿一覧 (Server Action)
     const { data: profileData } = useQuery({
@@ -87,7 +89,7 @@ export function ProfileClientView({ initialData, userId }: ProfileClientViewProp
                         </div>
 
                         {/* 自分のプロフィールの時のみ編集ボタンを表示 */}
-                        {isOwnProfile && (
+                        {isOwnProfile ? (
                             <EditProfileModal
                                 user={user}
                                 trigger={
@@ -99,6 +101,27 @@ export function ProfileClientView({ initialData, userId }: ProfileClientViewProp
                                     </Button>
                                 }
                             />
+                        ) : (
+                            /* 他人のプロフィールの時のみフォローボタンを表示 */
+                            loggedInUser && (
+                                <Button
+                                    variant={user.is_following ? "outline" : "secondary"}
+                                    size="default"
+                                    disabled={isFollowPending}
+                                    onClick={() => toggleFollow(user.id)}
+                                    className={`h-10 rounded-full px-6 text-sm font-bold transition-all ${
+                                        user.is_following
+                                            ? "border-slate-700 bg-transparent text-white hover:border-red-900 hover:bg-red-900/10 hover:text-red-500"
+                                            : "bg-white text-black hover:bg-white/90"
+                                    }`}
+                                >
+                                    {user.is_following ? (
+                                        <span className="after:content-['フォロー中'] hover:after:content-['解除']" />
+                                    ) : (
+                                        "フォロー"
+                                    )}
+                                </Button>
+                            )
                         )}
                     </div>
 
