@@ -56,6 +56,10 @@ export function mapSupabaseError(error: unknown): AppError {
             appError.errors = {
                 email: ["このメールアドレスは既に登録されています。"],
             };
+        } else if (code === "23514") {
+            // Check Violation (例: name の 50文字制限など)
+            appError.type = "VALIDATION_ERROR";
+            appError.message = "入力内容が規定の制限を超えています。";
         } else if (code.startsWith("PGRST")) {
             appError.type = "SYSTEM_ERROR";
             appError.message = "データベースエラーが発生しました。";
