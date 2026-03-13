@@ -4,6 +4,7 @@ import {
     type UpdateProfileParams,
 } from "@/features/users/api/update-profile";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/auth-store";
 
 /**
  * プロフィール更新用のカスタムフック
@@ -13,6 +14,7 @@ import { toast } from "sonner";
  */
 export function useUpdateProfile() {
     const queryClient = useQueryClient();
+    const { user, setUser } = useAuthStore();
 
     return useMutation({
         mutationFn: (params: UpdateProfileParams) => updateProfile(params),
@@ -21,7 +23,21 @@ export function useUpdateProfile() {
             if (result.success) {
                 toast.success("プロフィールを更新しました");
 
-                // 関連するキャッシュを全て無効化して再取得を促す
+                // 1. Zustand ストアのユーザー情報を即座に更新 (サイドバー等への即時反映用)
+                if (user) {
+                    setUser({
+                        ...user,
+                        name: variables.name,
+                        profile_text: variables.profileText || null,
+                        // 画像が更新された場合はパスを上書き
+                        avatar_url: variables.avatarFile
+                            ? `${variables.userId}/avatar.png`
+                            : user.avatar_url,
+                        updated_at: new Date().toISOString(),
+                    });
+                }
+
+                // 2. 関連するキャッシュを全て無効化して再取得を促す
                 // 1. プロフィール詳細データ
                 queryClient.invalidateQueries({
                     queryKey: ["profile", variables.userId],

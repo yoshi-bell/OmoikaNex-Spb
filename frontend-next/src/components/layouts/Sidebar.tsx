@@ -7,6 +7,7 @@ import { authApi } from "@/features/auth/api/auth";
 import { PostTweetForm } from "@/features/tweets/components/PostTweetForm";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import { toast } from "sonner";
+import { getAvatarUrl } from "@/lib/utils";
 
 /**
  * サイドバー・コンポーネント (ダークモード仕様)
@@ -62,16 +63,25 @@ export function Sidebar() {
                 {user && (
                     <Link
                         href={`/profile/${user.id}`}
-                        className="flex items-center gap-4 text-xl font-bold text-white transition-opacity hover:opacity-70"
+                        className="flex items-center gap-3 rounded-full py-3 text-white transition-opacity hover:opacity-70"
                     >
-                        <Image
-                            src="/images/profile.png"
-                            alt="プロフィール"
-                            width={24}
-                            height={24}
-                            className="brightness-0 invert"
-                        />
-                        プロフィール
+                        <div className="h-10 w-10 overflow-hidden rounded-full border border-slate-700">
+                            <Image
+                                src={getAvatarUrl(user.avatar_url, user.updated_at)}
+                                alt={user.name}
+                                width={40}
+                                height={40}
+                                className="h-full w-full object-cover"
+                            />
+                        </div>
+                        <div className="flex flex-col overflow-hidden">
+                            <span className="truncate text-[15px] font-bold">
+                                {user.name}
+                            </span>
+                            <span className="truncate text-xs text-slate-500">
+                                @...{user.id.slice(-8)}
+                            </span>
+                        </div>
                     </Link>
                 )}
 

@@ -129,7 +129,7 @@ export function TweetCard({
                             {tweet.user?.name || "Unknown"}
                         </span>
                         <span className="text-sm text-slate-500">
-                            @{tweet.user_id.slice(0, 8)}
+                            @...{tweet.user_id.slice(-8)}
                         </span>
                     </Link>
                     <div className="flex items-center gap-2">

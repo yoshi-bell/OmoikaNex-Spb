@@ -105,7 +105,7 @@ export function ProfileClientView({ initialData, userId }: ProfileClientViewProp
                     {/* ユーザー情報 */}
                     <div className="mb-6 space-y-1">
                         <h2 className="text-2xl font-bold text-white">{user.name}</h2>
-                        <p className="text-slate-500">@{user.id.slice(0, 8)}</p>
+                        <p className="text-slate-500">@...{user.id.slice(-8)}</p>
                     </div>
 
                     {/* 自己紹介文 */}
