@@ -46,7 +46,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     // JSX の返却は try/catch の外で行う
     return (
         <main className="flex-1">
-            <ProfileClientView initialData={profileData} />
+            <ProfileClientView initialData={profileData} userId={id} />
         </main>
     );
 }

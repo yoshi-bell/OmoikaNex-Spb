@@ -56,6 +56,23 @@ export const tweetFormSchema = z.object({
 });
 
 /**
+ * プロフィール編集用
+ */
+export const profileFormSchema = z.object({
+    name: z
+        .string()
+        .min(1, "名前を入力してください")
+        .max(50, "名前は50文字以内で入力してください"),
+    profile_text: z
+        .string()
+        .max(160, "自己紹介は160文字以内で入力してください")
+        .nullable()
+        .optional(),
+    // avatarFile は Zod でのバリデーションが複雑になるため、
+    // ここでは定義に含めず、コンポーネント側で File オブジェクトを扱います
+});
+
+/**
  * ==========================================
  * 3. ドメインオブジェクト (Mapping) スキーマ
  * ==========================================
@@ -71,6 +88,7 @@ export const userSchema = z.object({
     profile_text: z.string().nullable().optional(),
     avatar_url: z.string().nullable().optional(),
     created_at: z.string(),
+    updated_at: z.string().nullable().optional(),
 });
 
 /**
@@ -103,5 +121,6 @@ export const tweetSchema = z.object({
 export type LoginFormType = z.infer<typeof loginSchema>;
 export type RegisterFormType = z.infer<typeof registerSchema>;
 export type TweetFormType = z.infer<typeof tweetFormSchema>;
+export type ProfileFormType = z.infer<typeof profileFormSchema>;
 export type UserDomain = z.output<typeof userSchema>;
 export type TweetDomain = z.output<typeof tweetSchema>;

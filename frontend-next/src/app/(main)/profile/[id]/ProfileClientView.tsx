@@ -1,25 +1,40 @@
 "use client";
 
-import { UserProfileResponse } from "@/features/users/api/get-profile";
+import { UserProfileResponse, getUserProfile } from "@/features/users/api/get-profile";
 import { TweetCard } from "@/features/tweets/components/TweetCard";
 import { getAvatarUrl } from "@/lib/utils";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { EditProfileModal } from "@/features/users/components/EditProfileModal";
+import { useAuthUser } from "@/hooks/useAuthUser";
+import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
 
 interface ProfileClientViewProps {
     initialData: UserProfileResponse;
+    userId: string;
 }
 
 /**
  * プロフィール画面のクライアント・ビュー
- * 
- * サーバー側で取得した初期データを表示し、
- * インタラクティブな操作（タブ切り替え、いいね等）を担当します。
  */
-export function ProfileClientView({ initialData }: ProfileClientViewProps) {
+export function ProfileClientView({ initialData, userId }: ProfileClientViewProps) {
     const router = useRouter();
-    const { user, tweets } = initialData;
+    const { user: loggedInUser } = useAuthUser();
+
+    // React Query でプロフィールデータを管理 (Server Action を利用)
+    const { data: profileData } = useQuery({
+        queryKey: ["profile", userId],
+        queryFn: () => getUserProfile(userId),
+        initialData: initialData, // サーバーサイドで取得したデータを初期値にする (爆速表示)
+        staleTime: 1000 * 60 * 5, // 5分間はフレッシュとみなす
+    });
+
+    const { user, tweets } = profileData;
+
+    // 自分のプロフィールかどうかを判定
+    const isOwnProfile = loggedInUser && String(loggedInUser.id) === String(userId);
 
     return (
         <div className="flex min-h-screen flex-col border-r border-slate-800 bg-[#16181c]">
@@ -43,17 +58,32 @@ export function ProfileClientView({ initialData }: ProfileClientViewProps) {
                 <div className="h-48 w-full bg-slate-800" />
 
                 <div className="px-4">
-                    {/* アバター画像 (はみ出し配置) */}
-                    <div className="relative -mt-16 mb-4">
+                    {/* アバター画像と編集ボタンのエリア */}
+                    <div className="relative -mt-16 mb-4 flex items-end justify-between">
                         <div className="h-32 w-32 overflow-hidden rounded-full border-4 border-[#16181c] bg-slate-800">
                             <Image
-                                src={getAvatarUrl(user.avatar_url)}
+                                src={getAvatarUrl(user.avatar_url, user.updated_at)}
                                 alt={user.name}
                                 width={128}
                                 height={128}
                                 className="h-full w-full object-cover"
                             />
                         </div>
+
+                        {/* 自分のプロフィールの時のみ編集ボタンを表示 */}
+                        {isOwnProfile && (
+                            <EditProfileModal
+                                user={user}
+                                trigger={
+                                    <Button
+                                        variant="outline"
+                                        className="rounded-full border-slate-700 bg-transparent px-4 font-bold text-white hover:bg-white/10"
+                                    >
+                                        プロフィールを編集
+                                    </Button>
+                                }
+                            />
+                        )}
                     </div>
 
                     {/* ユーザー情報 */}

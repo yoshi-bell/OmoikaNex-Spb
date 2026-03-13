@@ -110,7 +110,7 @@ export function TweetCard({
                 className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-full bg-slate-800 transition-opacity hover:opacity-80"
             >
                 <Image
-                    src={getAvatarUrl(tweet.user?.avatar_url)}
+                    src={getAvatarUrl(tweet.user?.avatar_url, tweet.user?.updated_at)}
                     alt={tweet.user?.name || "User"}
                     width={48}
                     height={48}
@@ -263,7 +263,7 @@ export function TweetCard({
                             {/* ログインユーザーのアイコン */}
                             <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-slate-800">
                                 <Image
-                                    src={getAvatarUrl(user?.avatar_url)}
+                                    src={getAvatarUrl(user?.avatar_url, user?.updated_at)}
                                     alt={user?.name || "User"}
                                     width={40}
                                     height={40}

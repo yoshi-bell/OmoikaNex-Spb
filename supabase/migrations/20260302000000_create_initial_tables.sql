@@ -8,7 +8,7 @@ create extension if not exists pgcrypto;
 -- ==========================================
 create table public.users (
   id uuid references auth.users on delete cascade not null primary key,
-  name text not null,
+  name text not null check (char_length(name) <= 50),
   email text unique not null,
   profile_text varchar(160),
   avatar_url text,
