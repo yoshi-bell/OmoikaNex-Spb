@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { mapSupabaseError } from "@/lib/error-mapping";
 import { AppError } from "@/types/error";
+import { Database } from "@/types/database.types";
 
 export interface UpdateProfileParams {
     userId: string;
@@ -23,7 +24,7 @@ export interface UpdateProfileResponse {
  * @param params 更新データ（ID, 名前, 自己紹介, 画像ファイル）
  */
 export async function updateProfile(params: UpdateProfileParams): Promise<UpdateProfileResponse> {
-    const supabase = await createClient();
+    const supabase = createClient();
     let avatarPath: string | undefined;
 
     try {
@@ -32,7 +33,7 @@ export async function updateProfile(params: UpdateProfileParams): Promise<Update
             // パス形式: [userId]/avatar.png
             // ※ 常に同じ名前で上書きすることで管理をシンプルに保つ（キャッシュ対策はフロント側で対応）
             const filePath = `${params.userId}/avatar.png`;
-            
+
             const { error: uploadError } = await supabase.storage
                 .from("avatars")
                 .upload(filePath, params.avatarFile, {
@@ -42,12 +43,12 @@ export async function updateProfile(params: UpdateProfileParams): Promise<Update
             if (uploadError) {
                 return { success: false, error: mapSupabaseError(uploadError) };
             }
-            
+
             avatarPath = filePath;
         }
 
         // 2. DB レコードの更新
-        const updateData: any = {
+        const updateData: Database["public"]["Tables"]["users"]["Update"] = {
             name: params.name,
             profile_text: params.profileText,
             updated_at: new Date().toISOString(),
@@ -57,6 +58,7 @@ export async function updateProfile(params: UpdateProfileParams): Promise<Update
         if (avatarPath) {
             updateData.avatar_url = avatarPath;
         }
+
 
         const { error: dbError } = await supabase
             .from("users")
@@ -74,9 +76,8 @@ export async function updateProfile(params: UpdateProfileParams): Promise<Update
         return {
             success: false,
             error: {
-                code: "UNKNOWN_ERROR",
+                type: "SYSTEM_ERROR",
                 message: "予期せぬエラーが発生しました",
-                status: 500,
             },
         };
     }

@@ -1,7 +1,9 @@
 "use client";
 
 import { UserProfileResponse, getUserProfile } from "@/features/users/api/get-profile";
+import { getLikedTweets } from "@/features/users/api/get-liked-tweets";
 import { TweetCard } from "@/features/tweets/components/TweetCard";
+import { TweetCardSkeleton } from "@/features/tweets/components/TweetCardSkeleton";
 import { getAvatarUrl } from "@/lib/utils";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -10,11 +12,14 @@ import { EditProfileModal } from "@/features/users/components/EditProfileModal";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 interface ProfileClientViewProps {
     initialData: UserProfileResponse;
     userId: string;
 }
+
+type TabType = "posts" | "likes";
 
 /**
  * プロフィール画面のクライアント・ビュー
@@ -22,13 +27,22 @@ interface ProfileClientViewProps {
 export function ProfileClientView({ initialData, userId }: ProfileClientViewProps) {
     const router = useRouter();
     const { user: loggedInUser } = useAuthUser();
+    const [activeTab, setActiveTab] = useState<TabType>("posts");
 
-    // React Query でプロフィールデータを管理 (Server Action を利用)
+    // 1. プロフィール基本データと投稿一覧 (Server Action)
     const { data: profileData } = useQuery({
         queryKey: ["profile", userId],
         queryFn: () => getUserProfile(userId),
-        initialData: initialData, // サーバーサイドで取得したデータを初期値にする (爆速表示)
-        staleTime: 1000 * 60 * 5, // 5分間はフレッシュとみなす
+        initialData: initialData,
+        staleTime: 1000 * 60 * 5,
+    });
+
+    // 2. 「いいね」した投稿一覧 (Server Action) - タブ選択時のみ有効化
+    const { data: likedTweets, isLoading: isLoadingLikes } = useQuery({
+        queryKey: ["profile-likes", userId],
+        queryFn: () => getLikedTweets(userId),
+        enabled: activeTab === "likes",
+        staleTime: 1000 * 60 * 5,
     });
 
     const { user, tweets } = profileData;
@@ -48,7 +62,9 @@ export function ProfileClientView({ initialData, userId }: ProfileClientViewProp
                 </button>
                 <div>
                     <h1 className="text-xl font-bold text-white">{user.name}</h1>
-                    <p className="text-xs text-slate-500">{tweets.length} 件のポスト</p>
+                    <p className="text-xs text-slate-500">
+                        {activeTab === "posts" ? `${tweets.length} 件のポスト` : "いいねしたポスト"}
+                    </p>
                 </div>
             </div>
 
@@ -112,28 +128,56 @@ export function ProfileClientView({ initialData, userId }: ProfileClientViewProp
                     </div>
                 </div>
 
-                {/* タブナビゲーション (現在はポストのみ) */}
+                {/* タブナビゲーション */}
                 <div className="flex border-b border-slate-800">
-                    <div className="relative px-8 py-4 text-sm font-bold text-white">
+                    <button
+                        onClick={() => setActiveTab("posts")}
+                        className={`relative flex-1 py-4 text-sm font-bold transition-colors hover:bg-white/5 ${
+                            activeTab === "posts" ? "text-white" : "text-slate-500"
+                        }`}
+                    >
                         ポスト
-                        <div className="absolute bottom-0 left-0 h-1 w-full bg-indigo-500" />
-                    </div>
+                        {activeTab === "posts" && (
+                            <div className="absolute bottom-0 left-1/2 h-1 w-16 -translate-x-1/2 rounded-full bg-indigo-500" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("likes")}
+                        className={`relative flex-1 py-4 text-sm font-bold transition-colors hover:bg-white/5 ${
+                            activeTab === "likes" ? "text-white" : "text-slate-500"
+                        }`}
+                    >
+                        いいね
+                        {activeTab === "likes" && (
+                            <div className="absolute bottom-0 left-1/2 h-1 w-16 -translate-x-1/2 rounded-full bg-indigo-500" />
+                        )}
+                    </button>
                 </div>
             </div>
 
-            {/* 3. 投稿一覧タイムライン */}
+            {/* 3. 投稿一覧エリア */}
             <div className="flex flex-col">
-                {tweets.length === 0 ? (
-                    <div className="p-10 text-center text-gray-500">
-                        まだポストがありません
-                    </div>
+                {activeTab === "posts" ? (
+                    tweets.length === 0 ? (
+                        <div className="p-10 text-center text-gray-500">まだポストがありません</div>
+                    ) : (
+                        tweets.map((tweet) => (
+                            <TweetCard key={`post-${tweet.id}`} tweet={tweet} />
+                        ))
+                    )
                 ) : (
-                    tweets.map((tweet) => (
-                        <TweetCard 
-                            key={String(tweet.id)} 
-                            tweet={tweet} 
-                            isLinkable={true} 
-                        />
+                    /* いいねタブの表示 */
+                    isLoadingLikes ? (
+                        <div className="flex flex-col">
+                            <TweetCardSkeleton />
+                            <TweetCardSkeleton />
+                        </div>
+                    ) : (likedTweets?.length === 0 ? (
+                        <div className="p-10 text-center text-gray-500">まだいいねしたポストがありません</div>
+                    ) : (
+                        likedTweets?.map((tweet) => (
+                            <TweetCard key={`like-${tweet.id}`} tweet={tweet} />
+                        ))
                     ))
                 )}
             </div>

@@ -42,6 +42,8 @@ export function useToggleLike() {
         onMutate: async (tweetId: TweetId) => {
             await queryClient.cancelQueries({ queryKey: ["timeline"] });
             await queryClient.cancelQueries({ queryKey: ["tweets"] });
+            await queryClient.cancelQueries({ queryKey: ["profile"] });
+            await queryClient.cancelQueries({ queryKey: ["profile-likes"] });
 
             // 1. タイムライン (ホーム画面) の更新
             const previousTimeline = queryClient.getQueryData<
@@ -79,9 +81,7 @@ export function useToggleLike() {
             >(
                 { queryKey: ["tweets"] },
                 (old) => {
-                    // pages を持たない (単一詳細クエリなどの) キャッシュは無視する
                     if (!old || !old.pages) return old;
-
                     return {
                         ...old,
                         pages: old.pages.map((page) => ({
@@ -89,6 +89,28 @@ export function useToggleLike() {
                             data: page.data?.map((t) => updateTweet(t, tweetId)) || [],
                         })),
                     };
+                }
+            );
+
+            // 4. プロフィール画面 ["profile"] を含む全クエリを更新
+            queryClient.setQueriesData<any>(
+                { queryKey: ["profile"] },
+                (old: any) => {
+                    // getUserProfile の戻り値構造 (user, tweets) に対応
+                    if (!old || !old.tweets) return old;
+                    return {
+                        ...old,
+                        tweets: old.tweets.map((t: TweetDomain) => updateTweet(t, tweetId)),
+                    };
+                }
+            );
+
+            // 5. プロフィール「いいね」タブ ["profile-likes"] を更新
+            queryClient.setQueriesData<TweetDomain[]>(
+                { queryKey: ["profile-likes"] },
+                (old) => {
+                    if (!old) return old;
+                    return old.map((t) => updateTweet(t, tweetId));
                 }
             );
 
@@ -109,6 +131,8 @@ export function useToggleLike() {
             queryClient.invalidateQueries({ queryKey: ["timeline"] });
             queryClient.invalidateQueries({ queryKey: ["tweets", tweetId] });
             queryClient.invalidateQueries({ queryKey: ["tweets"] });
+            queryClient.invalidateQueries({ queryKey: ["profile"] });
+            queryClient.invalidateQueries({ queryKey: ["profile-likes"] });
         },
     });
 }
