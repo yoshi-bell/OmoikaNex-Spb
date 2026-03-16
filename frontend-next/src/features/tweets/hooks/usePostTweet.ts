@@ -26,10 +26,9 @@ export function usePostTweet() {
                 toast.success(message);
 
                 // 関連する全てのクエリを無効化して最新化する
-                // 'timeline': ホーム画面のリスト
-                // 'tweets': 詳細画面 (/tweet/[id]) やその下の返信一覧
                 queryClient.invalidateQueries({ queryKey: ["timeline"] });
                 queryClient.invalidateQueries({ queryKey: ["tweets"] });
+                queryClient.invalidateQueries({ queryKey: ["profile"] });
             } else {
                 toast.error(result.error?.message || "投稿に失敗しました");
             }

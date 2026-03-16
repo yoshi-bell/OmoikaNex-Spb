@@ -17,7 +17,12 @@ export function useDeleteTweet() {
         onSuccess: (result) => {
             if (result.success) {
                 toast.success("投稿を削除しました");
+                
+                // 全ての関連キャッシュを無効化して画面を最新状態に同期
                 queryClient.invalidateQueries({ queryKey: ["timeline"] });
+                queryClient.invalidateQueries({ queryKey: ["tweets"] });
+                queryClient.invalidateQueries({ queryKey: ["profile"] });
+                queryClient.invalidateQueries({ queryKey: ["profile-likes"] });
             } else {
                 toast.error(result.error?.message || "削除に失敗しました");
             }
