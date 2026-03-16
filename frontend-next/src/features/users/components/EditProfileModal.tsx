@@ -67,23 +67,26 @@ export function EditProfileModal({ user, trigger }: EditProfileModalProps) {
 
     // 保存処理
     const onSubmit = (values: ProfileFormType) => {
-        updateProfile(
-            {
-                userId: user.id,
-                name: values.name,
-                profileText: values.profile_text,
-                avatarFile: selectedFile,
+        // FormData の構築 (バイナリ送信対応)
+        const formData = new FormData();
+        formData.append("userId", user.id);
+        formData.append("name", values.name);
+        if (values.profile_text) {
+            formData.append("profileText", values.profile_text);
+        }
+        if (selectedFile) {
+            formData.append("avatarFile", selectedFile);
+        }
+
+        updateProfile(formData, {
+            onSuccess: (result) => {
+                if (result.success) {
+                    setOpen(false);
+                    // プレビューURLのメモリ解放
+                    if (previewUrl) URL.revokeObjectURL(previewUrl);
+                }
             },
-            {
-                onSuccess: (result) => {
-                    if (result.success) {
-                        setOpen(false);
-                        // プレビューURLのメモリ解放
-                        if (previewUrl) URL.revokeObjectURL(previewUrl);
-                    }
-                },
-            }
-        );
+        });
     };
 
     return (

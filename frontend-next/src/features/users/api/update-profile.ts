@@ -1,14 +1,9 @@
-import { createClient } from "@/lib/supabase/client";
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
 import { mapSupabaseError } from "@/lib/error-mapping";
 import { AppError } from "@/types/error";
 import { Database } from "@/types/database.types";
-
-export interface UpdateProfileParams {
-    userId: string;
-    name: string;
-    profileText?: string | null;
-    avatarFile?: File | null;
-}
 
 export interface UpdateProfileResponse {
     success: boolean;
@@ -16,54 +11,64 @@ export interface UpdateProfileResponse {
 }
 
 /**
- * ユーザープロフィールを更新する (Repository - Server Side)
+ * ユーザープロフィールを更新する (Server Action)
  * 
- * 1. 画像ファイルがある場合は Storage へアップロード
- * 2. ユーザー情報を DB へ保存
+ * FormData を受け取り、サーバーサイドで Storage アップロードと DB 更新を実行します。
+ * クライアントサイドに Supabase の実装詳細を漏らしません。
  * 
- * @param params 更新データ（ID, 名前, 自己紹介, 画像ファイル）
+ * @param formData フォームデータ (userId, name, profileText, avatarFile)
  */
-export async function updateProfile(params: UpdateProfileParams): Promise<UpdateProfileResponse> {
-    const supabase = createClient();
+export async function updateProfile(formData: FormData): Promise<UpdateProfileResponse> {
+    const supabase = await createClient();
+    
+    // FormData から値を取り出し
+    const userId = formData.get("userId") as string;
+    const name = formData.get("name") as string;
+    const profileText = formData.get("profileText") as string | null;
+    const avatarFile = formData.get("avatarFile") as File | null;
+
+    if (!userId || !name) {
+        return {
+            success: false,
+            error: { type: "VALIDATION_ERROR", message: "必須項目が不足しています" }
+        };
+    }
+
     let avatarPath: string | undefined;
 
     try {
-        // 1. 画像のアップロード処理 (存在する場合のみ)
-        if (params.avatarFile) {
-            // パス形式: [userId]/avatar.png
-            // ※ 常に同じ名前で上書きすることで管理をシンプルに保つ（キャッシュ対策はフロント側で対応）
-            const filePath = `${params.userId}/avatar.png`;
-
+        // 1. 画像のアップロード処理 (ファイルが存在し、サイズがある場合)
+        if (avatarFile && avatarFile.size > 0) {
+            const filePath = `${userId}/avatar.png`;
+            
             const { error: uploadError } = await supabase.storage
                 .from("avatars")
-                .upload(filePath, params.avatarFile, {
-                    upsert: true, // 既存があれば上書き
+                .upload(filePath, avatarFile, {
+                    upsert: true,
                 });
 
             if (uploadError) {
                 return { success: false, error: mapSupabaseError(uploadError) };
             }
-
+            
             avatarPath = filePath;
         }
 
         // 2. DB レコードの更新
         const updateData: Database["public"]["Tables"]["users"]["Update"] = {
-            name: params.name,
-            profile_text: params.profileText,
+            name: name,
+            profile_text: profileText,
             updated_at: new Date().toISOString(),
         };
 
-        // 画像が更新された場合のみ path を追加
         if (avatarPath) {
             updateData.avatar_url = avatarPath;
         }
 
-
         const { error: dbError } = await supabase
             .from("users")
             .update(updateData)
-            .eq("id", params.userId);
+            .eq("id", userId);
 
         if (dbError) {
             return { success: false, error: mapSupabaseError(dbError) };
@@ -72,7 +77,7 @@ export async function updateProfile(params: UpdateProfileParams): Promise<Update
         return { success: true };
 
     } catch (error) {
-        console.error("updateProfile Unexpected Error:", error);
+        console.error("updateProfile Server Action Error:", error);
         return {
             success: false,
             error: {

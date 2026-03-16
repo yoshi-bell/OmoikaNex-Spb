@@ -3,6 +3,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
     /* config options here */
     reactCompiler: true,
+    experimental: {
+        serverActions: {
+            bodySizeLimit: "4mb",
+        },
+    },
     images: {
       // 開発環境 (ローカル) では Next.js サーバーによる画像最適化を無効化し、
       // ローカル Supabase ストレージからの直接取得を許可する
