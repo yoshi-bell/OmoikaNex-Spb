@@ -14,6 +14,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { usePostTweet } from "@/features/tweets/hooks/usePostTweet";
+import { useAuthUser } from "@/hooks/useAuthUser";
+import { usePathname, useRouter } from "next/navigation";
 
 /**
  * 投稿作成フォーム・コンポーネント (ダークモード・サイドバー仕様)
@@ -23,6 +25,9 @@ import { usePostTweet } from "@/features/tweets/hooks/usePostTweet";
  */
 export function PostTweetForm() {
     const { mutate: postTweet, isPending } = usePostTweet();
+    const { user } = useAuthUser();
+    const pathname = usePathname();
+    const router = useRouter();
 
     const form = useForm<TweetFormType>({
         resolver: zodResolver(tweetFormSchema),
@@ -38,6 +43,11 @@ export function PostTweetForm() {
                     form.reset();
                     // 投稿後、最新のツイートを確認できるよう最上部へスクロール
                     window.scrollTo({ top: 0, behavior: "smooth" });
+
+                    // ホーム画面以外から投稿した場合は、ホームへ遷移させる
+                    if (pathname !== "/") {
+                        router.push("/");
+                    }
                 }
             },
         });
@@ -60,8 +70,8 @@ export function PostTweetForm() {
                             <FormItem>
                                 <FormControl>
                                     <Textarea
-                                        placeholder="いまどうしてる？"
-                                        disabled={isPending}
+                                        placeholder={user ? "いまどうしてる？" : "ログインしてシェアしよう"}
+                                        disabled={isPending || !user}
                                         className="min-h-[140px] resize-none border border-white bg-transparent p-4 text-white placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-50"
                                         {...field}
                                     />
@@ -75,7 +85,7 @@ export function PostTweetForm() {
                     <div className="mt-4 flex justify-end">
                         <Button
                             type="submit"
-                            disabled={isPending}
+                            disabled={isPending || !user}
                             className="rounded-full bg-indigo-600 px-8 py-2 font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
                         >
                             {isPending ? "送信中..." : "シェアする"}

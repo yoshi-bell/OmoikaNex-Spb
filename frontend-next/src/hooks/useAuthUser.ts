@@ -7,11 +7,14 @@ import { useAuthStore } from "@/store/auth-store";
  * このフックは Zustand ストアから現在の認証状態を返すのみの軽量な窓口です。
  */
 export function useAuthUser() {
-    const { user, isAuthenticated, isInitialLoading } = useAuthStore();
+    const { user, isAuthenticated, isInitialLoading, setUser, clearAuth } =
+        useAuthStore();
 
     return {
         user,
         isAuthenticated,
         isInitialLoading,
+        setUser,
+        clearAuth,
     };
 }
