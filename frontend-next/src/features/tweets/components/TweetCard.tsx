@@ -28,6 +28,7 @@ import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
 import { getAvatarUrl } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface TweetCardProps {
     tweet: TweetDomain;
@@ -150,6 +151,10 @@ export function TweetCard({
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
+                            if (!user) {
+                                toast.error("ログインが必要です。");
+                                return;
+                            }
                             setIsReplyOpen(!isReplyOpen);
                         }}
                         className={`group flex items-center gap-2 transition-colors hover:text-indigo-400 ${
@@ -176,6 +181,10 @@ export function TweetCard({
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
+                            if (!user) {
+                                toast.error("ログインが必要です。");
+                                return;
+                            }
                             toggleLike(tweet.id);
                         }}
                         className={`group flex items-center gap-2 transition-colors hover:text-rose-500 ${
