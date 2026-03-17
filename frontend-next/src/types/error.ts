@@ -4,6 +4,7 @@
 export type AppErrorType =
     | "VALIDATION_ERROR" // 入力値の不備
     | "AUTH_FAILED" // 認証情報の不一致（ログイン失敗など）
+    | "AUTH_NOT_CONFIRMED" // メール認証が未完了
     | "AUTH_EXPIRED" // セッション有効期限切れ
     | "NOT_FOUND" // リソースが存在しない
     | "PERMISSION_DENIED" // 権限不足 (RLS 違反など)

@@ -72,14 +72,31 @@ export function LoginForm() {
                 setUser(domainUser);
             }
 
-            toast.success("ログインしました。");
-            router.push("/");
-            router.refresh();
-        } else {
+            toast.success('ログインしました。')
+            router.push('/')
+            router.refresh()
+            } else {
             // 翻訳されたドメインエラーを表示
-            toast.error(error?.message || "ログインに失敗しました。");
+            toast.error(error?.message || 'ログインに失敗しました。')
+
+            // メール認証未完了の場合、その場で再送信して案内ページへ誘導
+            if (error?.type === 'AUTH_NOT_CONFIRMED') {
+              // 通信結果を確実に待機 (Floating Promise の解消)
+              const resendResult = await authApi.resendVerificationEmail(values.email)
+              
+              if (resendResult.success) {
+                toast.info('認証メールを再送信しました。メールをご確認ください。')
+                setTimeout(() => {
+                  router.push(`/register/verify?email=${encodeURIComponent(values.email)}`)
+                }, 2000)
+              } else {
+                // レートリミット等のエラー時は遷移させず、その場に留める
+                toast.error('メールの送信制限に達したか、エラーが発生しました。しばらく待ってから再度お試しください。')
+              }
+            }
 
             // フィールド固有のエラーがあればマッピング
+
             if (error?.errors) {
                 Object.entries(error.errors).forEach(([field, messages]) => {
                     form.setError(field as keyof LoginFormType, {

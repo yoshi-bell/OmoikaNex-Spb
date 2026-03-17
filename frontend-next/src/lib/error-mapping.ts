@@ -22,6 +22,9 @@ export function mapSupabaseError(error: unknown): AppError {
                 appError.type = "AUTH_FAILED";
                 if (error.message.includes("already registered")) {
                     appError.message = "このメールアドレスは既に登録されています。";
+                } else if (error.message.includes("Email not confirmed")) {
+                    appError.type = "AUTH_NOT_CONFIRMED";
+                    appError.message = "メール認証が完了していません。";
                 }
                 break;
             case 401:
