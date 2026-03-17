@@ -8,6 +8,7 @@ import { PostTweetForm } from "@/features/tweets/components/PostTweetForm";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import { toast } from "sonner";
 import { getAvatarUrl } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
 
 /**
  * サイドバー・コンポーネント (ダークモード仕様)
@@ -17,11 +18,14 @@ import { getAvatarUrl } from "@/lib/utils";
  */
 export function Sidebar() {
     const router = useRouter();
+    const queryClient = useQueryClient();
     const { user, isInitialLoading, clearAuth } = useAuthUser();
 
     const handleLogout = async () => {
         const { success, error } = await authApi.signOut();
         if (success) {
+            // サーバーキャッシュを完全にクリア (ログアウト後の不整合を防止)
+            queryClient.clear();
             clearAuth();
             toast.success("ログアウトしました");
             router.push("/login");

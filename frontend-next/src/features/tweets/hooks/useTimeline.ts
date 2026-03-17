@@ -3,6 +3,7 @@ import { getTimeline } from "@/features/tweets/api/get-timeline";
 import { TweetDomain } from "@/lib/schemas";
 import { AppError } from "@/types/error";
 import { APP_CONFIG } from "@/constants/config";
+import { useAuthUser } from "@/hooks/useAuthUser";
 
 /**
  * タイムライン取得用のカスタムフック (無限スクロール対応)
@@ -11,13 +12,15 @@ import { APP_CONFIG } from "@/constants/config";
  * スクロールに応じて fetchNextPage を呼び出すことで追加データを読み込みます。
  */
 export function useTimeline(mode: "all" | "following" = "all") {
+    const { user } = useAuthUser();
+
     return useInfiniteQuery<{
         data: TweetDomain[] | null;
         nextCursor: string | null;
         error: AppError | null;
     }>({
-        // クエリキーに mode を含めることで、タブごとにキャッシュを分離
-        queryKey: ["timeline", mode],
+        // クエリキーに mode と user.id を含めることで、タブやユーザーごとにキャッシュを分離
+        queryKey: ["timeline", mode, user?.id],
 
         // クエリ関数 (pageParam にカーソルが渡される)
         queryFn: async ({ pageParam }) => {
