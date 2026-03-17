@@ -50,7 +50,23 @@ export function ProfileClientView({ initialData, userId }: ProfileClientViewProp
     const { user, tweets } = profileData;
 
     // 自分のプロフィールかどうかを判定
-    const isOwnProfile = loggedInUser && String(loggedInUser.id) === String(userId);
+    const isOwnProfile =
+        loggedInUser && String(loggedInUser.id) === String(userId);
+
+    // 【説明変数】プライバシー仕様: 「いいね」タブを表示できるかどうかの判定
+    const canShowLikes = (isOwnProfile === true);
+
+    // 【説明変数】現在選択されているタブに基づいて表示するデータの決定
+    // 括弧 () を使用して論理の塊を明示する (Coding Rule 準拠)
+    const displayTweets = (activeTab === "posts")
+        ? tweets
+        : (canShowLikes ? (likedTweets || []) : []);
+
+    const isLoading = (activeTab === "likes") && (isLoadingLikes === true);
+
+    const emptyMessage = (activeTab === "posts")
+        ? "まだポストがありません"
+        : "まだいいねしたポストがありません";
 
     return (
         <div className="flex min-h-screen flex-col border-r border-slate-800 bg-[#16181c]">
@@ -164,46 +180,43 @@ export function ProfileClientView({ initialData, userId }: ProfileClientViewProp
                             <div className="absolute bottom-0 left-1/2 h-1 w-16 -translate-x-1/2 rounded-full bg-indigo-500" />
                         )}
                     </button>
-                    <button
-                        onClick={() => setActiveTab("likes")}
-                        className={`relative flex-1 py-4 text-sm font-bold transition-colors hover:bg-white/5 ${
-                            activeTab === "likes" ? "text-white" : "text-slate-500"
-                        }`}
-                    >
-                        いいね
-                        {activeTab === "likes" && (
-                            <div className="absolute bottom-0 left-1/2 h-1 w-16 -translate-x-1/2 rounded-full bg-indigo-500" />
-                        )}
-                    </button>
+                    {isOwnProfile && (
+                        <button
+                            onClick={() => setActiveTab("likes")}
+                            className={`relative flex-1 py-4 text-sm font-bold transition-colors hover:bg-white/5 ${
+                                activeTab === "likes" ? "text-white" : "text-slate-500"
+                            }`}
+                        >
+                            いいね
+                            {activeTab === "likes" && (
+                                <div className="absolute bottom-0 left-1/2 h-1 w-16 -translate-x-1/2 rounded-full bg-indigo-500" />
+                            )}
+                        </button>
+                    )}
                 </div>
             </div>
 
             {/* 3. 投稿一覧エリア */}
             <div className="flex flex-col">
-                {activeTab === "posts" ? (
-                    tweets.length === 0 ? (
-                        <div className="p-10 text-center text-gray-500">まだポストがありません</div>
-                    ) : (
-                        tweets.map((tweet) => (
-                            <TweetCard key={`post-${tweet.id}`} tweet={tweet} />
-                        ))
-                    )
+                {isLoading ? (
+                    <div className="flex flex-col">
+                        <TweetCardSkeleton />
+                        <TweetCardSkeleton />
+                    </div>
+                ) : (displayTweets.length === 0) ? (
+                    <div className="p-10 text-center text-gray-500">
+                        {emptyMessage}
+                    </div>
                 ) : (
-                    /* いいねタブの表示 */
-                    isLoadingLikes ? (
-                        <div className="flex flex-col">
-                            <TweetCardSkeleton />
-                            <TweetCardSkeleton />
-                        </div>
-                    ) : (likedTweets?.length === 0 ? (
-                        <div className="p-10 text-center text-gray-500">まだいいねしたポストがありません</div>
-                    ) : (
-                        likedTweets?.map((tweet) => (
-                            <TweetCard key={`like-${tweet.id}`} tweet={tweet} />
-                        ))
+                    displayTweets.map((tweet) => (
+                        <TweetCard
+                            key={`${activeTab}-${tweet.id}`}
+                            tweet={tweet}
+                        />
                     ))
                 )}
             </div>
-        </div>
-    );
-}
+            </div>
+            );
+            }
+

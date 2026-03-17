@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => {
             subscription.unsubscribe();
         };
-    }, [supabase.auth, setUser, clearAuth, isInitialized, setInitialized]);
+    }, [supabase, setUser, clearAuth, isInitialized, setInitialized]);
 
     return <>{children}</>;
 }
