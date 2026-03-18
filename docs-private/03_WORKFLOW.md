@@ -32,6 +32,25 @@
     - Networkタブでブラウザへ送信されるデータの最適化（過剰なリレーション先の読み込み防止など）がされているか。
     - 本番モードにおいて、Next.js による画像最適化がエラーなく機能し、適切なサイズで配信されているか。
 
+### 戦略的テスト実行フロー (Data Protection & Test Flow)
+
+E2Eテスト（Playwright）等で本物のDBを使用する際、開発データを保護しながらクリーンな検証を行うため、以下の「三段階フロー」を遵守すること。
+
+#### 1. 開発データのバックアップ (Backup Phase)
+- **public スキーマ:** `npx supabase db dump --data-only -f supabase/dev_backup_public.sql` により一般データを抽出。
+- **auth.users スキーマ:** Supabase の仕様上 `dump` に含まれにくいため、現在の `auth.users` の挿入SQLを手動またはスクリプトで `supabase/dev_backup_auth.sql` として保存する。
+- **重要:** テスト開始前に必ずこの 2 ファイルが正常に生成されたことを確認すること。
+
+#### 2. テストの実行 (Execution Phase)
+- **環境構築:** `seed.sql` をテスト専用のデータ（`test_seed.sql` 相当）に一時的に差し替え、`npx supabase db reset` でクリーンなテスト環境を構築。
+- **検証:** `TEST_CASES.md` に基づく Vitest / MSW / Playwright テストを完走させる。
+- **実装:** テストコードは各機能の近傍（`__tests__/`）に配置し、Repository層のエラーマッピングを含めて検証する。
+
+#### 3. 開発環境の復元 (Restore Phase)
+- **復旧:** テスト完了後、バックアップした `dev_backup_auth_safe.sql` および `dev_backup_public_safe.sql` を順次適用（または `seed.sql` を元に戻してリセット）し、開発データを完全に復元する。
+- **プロ仕様のリストア:** トリガーによる PK 重複エラー（on_auth_user_created 等）を防ぐため、リストア時は必ず `SET session_replication_role = 'replica';` を実行してトリガーを一時的に無効化すること。
+- **整合性確認:** 復元後にブラウザでログインし、以前のデータが正しく表示されることを目視確認する。
+
 ### DB 変更の標準サイクル (DB Migration Workflow)
 
 スキーマ（テーブル、カラム、RLS）を変更する際は、必ず以下の手順を遵守すること。
@@ -85,8 +104,8 @@
 > AIエージェントは作業中、常にここを更新すること。
 
 **現在のフェーズ:** Phase 7: 品質保証 (Testing & QA)
-**現在のアクティブタスク:** 自動テストの構築（Vitest による単体テストと Playwright による E2E テスト）
-**ステータス:** Guest Guard、未ログイン UX 改善、プライバシー保護、およびキャッシュ整合性の問題をすべて解決。機能要件（FEATURES.md）およびテスト仕様書（TEST_CASES.md）への反映を完遂し、開発の「正解」を定義。これより、安定稼働を保証するための自動テスト実装に本格着手する。
+**現在のアクティブタスク:** 具体的なテストコード（Vitest単体テスト、Playwright E2Eテスト）の実装。
+**ステータス:** テスト環境の物理的基盤（Vitest, MSW, Playwright）の構築、および OS 非依存のコマンド設定が完了。また、開発データを保護するための「バックアップ・テスト・復元」の安全な運用フローも確立。これより、`TEST_CASES.md` に定義された各シナリオのコード実装へ移行する。
 
 
 
@@ -144,7 +163,14 @@
 - [x] **アイデンティティ表示:** ログイン中のユーザー名・ユーザーIDをサイドバー等の定位置に常時表示し、自身のステータスを可視化。
 
 
-### Phase 7: デプロイとインフラ検証
+### Phase 7: 品質保証 (Testing & QA)
+
+- [x] **データ保護 (Backup):** 開発データのバックアップ（public/auth両スキーマ）の完了。
+- [x] **基盤構築 (Setup):** Vitest, MSW, Playwright のインストールと環境設定。
+- [ ] **テスト実装 (Implementation):** `TEST_CASES.md` に基づく単体・結合・E2Eテストの実装。
+- [ ] **環境復旧 (Restore):** テスト完了後の開発データの完全復元と整合性確認。
+
+### Phase 8: デプロイとインフラ検証 (旧 Phase 7)
 
 - [ ] **CI/CD 構築:** GitHub Actions による自動 Lint / Build チェックの構築。
 - [ ] **Preview Deploy:** Vercel 等を用いた、PR ごとの本番同等環境（プレビュー環境）の自動生成。
