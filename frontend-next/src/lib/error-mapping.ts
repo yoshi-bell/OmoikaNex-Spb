@@ -13,61 +13,57 @@ export function mapSupabaseError(error: unknown): AppError {
         originalError: error,
     };
 
-    // 1. Supabase Auth 関連のエラー
-    if (error instanceof AuthError) {
+    // 1. Supabase Auth 関連のエラー判定
+    if (isSupabaseAuthError(error)) {
         appError.message = error.message;
 
-        switch (error.status) {
-            case 400:
-                appError.type = "AUTH_FAILED";
-                if (error.message.includes("already registered")) {
-                    appError.message = "このメールアドレスは既に登録されています。";
-                } else if (error.message.includes("Email not confirmed")) {
-                    appError.type = "AUTH_NOT_CONFIRMED";
-                    appError.message = "メール認証が完了していません。";
-                }
-                break;
-            case 401:
-                appError.type = "AUTH_EXPIRED";
-                appError.message =
-                    "セッションの期限が切れました。再度ログインしてください。";
-                break;
-            case 422:
-                appError.type = "VALIDATION_ERROR";
-                appError.message = "入力内容に不備があります。";
-                break;
-            case 429:
-                appError.type = "RATE_LIMIT";
-                appError.message =
-                    "リクエストが多すぎます。しばらく時間を置いてからお試しください。";
-                break;
+        // HTTP ステータスコードまたはメッセージ内容による詳細判定
+        const status = error.status;
+        const message = error.message;
+
+        if (status === 400 || message.includes("already registered")) {
+            appError.type = "AUTH_FAILED";
+            appError.message = "このメールアドレスは既に登録されています。";
+            appError.errors = {
+                email: ["このメールアドレスは既に登録されています。"],
+            };
+        } else if (message.includes("Email not confirmed")) {
+            appError.type = "AUTH_NOT_CONFIRMED";
+            appError.message = "メール認証が完了していません。";
+        } else if (status === 401) {
+            appError.type = "AUTH_EXPIRED";
+            appError.message = "セッションの期限が切れました。再度ログインしてください。";
+        } else if (status === 429) {
+            appError.type = "RATE_LIMIT";
+            appError.message = "リクエストが多すぎます。しばらく時間を置いてからお試しください。";
         }
-        return appError;
+
+        // JSON パースエラーや「fetch failed」などがラップされている場合は下流の判定に任せる
+        if (
+            !message.includes("Unexpected end of JSON input") &&
+            !message.includes("fetch")
+        ) {
+            return appError;
+        }
     }
 
     // 2. PostgREST (Database) 関連のエラー判定
-    // (PostgREST エラーは instance of で判定できないため、オブジェクトのプロパティで判別)
     if (isPostgrestError(error)) {
         const code = error.code;
 
-        // PostgreSQL のエラーコードに基づく変換
         if (code === "23505") {
-            // Unique Violation
             appError.type = "VALIDATION_ERROR";
             appError.message = "既に登録されています。";
-            // 簡易的なフィールドマッピング（実際には詳細なパースが必要）
             appError.errors = {
                 email: ["このメールアドレスは既に登録されています。"],
             };
         } else if (code === "23514") {
-            // Check Violation (例: name の 50文字制限など)
             appError.type = "VALIDATION_ERROR";
             appError.message = "入力内容が規定の制限を超えています。";
-        } else if (code.startsWith("PGRST")) {
+        } else if (typeof code === "string" && code.startsWith("PGRST")) {
             appError.type = "SYSTEM_ERROR";
             appError.message = "データベースエラーが発生しました。";
         } else if (code === "42501") {
-            // RLS Violation
             appError.type = "PERMISSION_DENIED";
             appError.message = "この操作を行う権限がありません。";
         }
@@ -75,15 +71,39 @@ export function mapSupabaseError(error: unknown): AppError {
         return appError;
     }
 
-    // 3. ネットワークエラー判定
-    if (error instanceof TypeError && error.message === "Failed to fetch") {
+    // 3. ネットワークエラーおよびサーバーエラー判定 (メッセージベース)
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    
+    if (
+        errorMsg.includes("Failed to fetch") ||
+        errorMsg.includes("fetch failed") ||
+        errorMsg.includes("Load failed")
+    ) {
         appError.type = "NETWORK_ERROR";
-        appError.message =
-            "ネットワークに接続できません。通信環境を確認してください。";
+        appError.message = "ネットワークに接続できません。通信環境を確認してください。";
+        return appError;
+    }
+
+    if (
+        errorMsg.includes("Unexpected end of JSON input") ||
+        error instanceof SyntaxError
+    ) {
+        appError.type = "SYSTEM_ERROR";
+        appError.message = "サーバーで問題が発生しました。しばらく時間を置いてからお試しください。";
         return appError;
     }
 
     return appError;
+}
+
+/**
+ * 型ガード: Supabase Auth エラーかどうかを判定します。
+ */
+function isSupabaseAuthError(error: unknown): error is AuthError {
+    return (
+        error instanceof AuthError ||
+        (typeof error === "object" && error !== null && "__isAuthError" in error)
+    );
 }
 
 /**
@@ -96,8 +116,8 @@ function isPostgrestError(
         typeof error === "object" &&
         error !== null &&
         "code" in error &&
-        typeof (error as Record<string, unknown>).code === "string" &&
         "message" in error &&
-        typeof (error as Record<string, unknown>).message === "string"
+        "details" in error &&
+        "hint" in error
     );
 }
