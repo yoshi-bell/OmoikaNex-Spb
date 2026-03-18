@@ -157,6 +157,7 @@ export function TweetCard({
                             }
                             setIsReplyOpen(!isReplyOpen);
                         }}
+                        aria-label="返信"
                         className={`group flex items-center gap-2 transition-colors hover:text-indigo-400 ${
                             isReplyOpen ? "text-indigo-400" : ""
                         }`}
@@ -187,6 +188,7 @@ export function TweetCard({
                             }
                             toggleLike(tweet.id);
                         }}
+                        aria-label="いいね"
                         className={`group flex items-center gap-2 transition-colors hover:text-rose-500 ${
                             tweet.is_liked ? "text-rose-500" : ""
                         }`}
