@@ -50,6 +50,7 @@ export const registerSchema = loginSchema.extend({
 export const tweetFormSchema = z.object({
     content: z
         .string()
+        .trim()
         .min(1, "投稿内容を入力してください")
         .max(140, "投稿は140文字以内で入力してください"),
     parent_id: z.number().nullable().optional(),

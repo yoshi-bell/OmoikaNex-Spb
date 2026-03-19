@@ -12,6 +12,7 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 import { usePostTweet } from "@/features/tweets/hooks/usePostTweet";
 import { useAuthUser } from "@/hooks/useAuthUser";
@@ -48,6 +49,9 @@ export function PostTweetForm() {
                     if (pathname !== "/") {
                         router.push("/");
                     }
+                } else {
+                    // 💡 QA指摘: 失敗時もユーザーに理由を伝える
+                    toast.error(result.error?.message || "投稿に失敗しました");
                 }
             },
         });
