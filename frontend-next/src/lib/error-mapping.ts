@@ -13,7 +13,7 @@ export function mapSupabaseError(error: unknown): AppError {
         originalError: error,
     };
 
-    const errorMsg = error instanceof Error ? error.message : String(error);
+    const errorMsg = (error instanceof Error ? error.message : String(error)).toLowerCase();
 
     // 1. Supabase Auth 関連のエラー判定
     if (isSupabaseAuthError(error)) {
@@ -83,9 +83,9 @@ export function mapSupabaseError(error: unknown): AppError {
 
     // 3. ネットワークエラー判定
     if (
-        errorMsg.includes("Failed to fetch") ||
+        errorMsg.includes("failed to fetch") ||
         errorMsg.includes("fetch failed") ||
-        errorMsg.includes("Load failed")
+        errorMsg.includes("load failed")
     ) {
         appError.type = "NETWORK_ERROR";
         appError.message = "ネットワークに接続できません。通信環境を確認してください。";
@@ -94,8 +94,8 @@ export function mapSupabaseError(error: unknown): AppError {
 
     // 4. サーバー/パースエラー
     if (
-        errorMsg.includes("Unexpected end of JSON input") ||
-        errorMsg.includes("Auth session or user missing") ||
+        errorMsg.includes("unexpected end of json input") ||
+        errorMsg.includes("auth session or user missing") ||
         error instanceof SyntaxError
     ) {
         appError.type = "SYSTEM_ERROR";

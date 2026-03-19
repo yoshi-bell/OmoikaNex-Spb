@@ -46,7 +46,9 @@ export async function middleware(request: NextRequest) {
     // 1. Guest Guard (ログイン済みユーザーへの制限)
     // ---------------------------------------------------------
     // ログイン済みユーザーがログイン/登録画面にアクセスした場合、ホームへ飛ばす
-    const isGuestOnlyPath = pathname.startsWith("/login") || pathname.startsWith("/register");
+    // 💡 大文字小文字の差異によるバイパスを防ぐため小文字化して判定
+    const normalizedPath = pathname.toLowerCase();
+    const isGuestOnlyPath = normalizedPath.startsWith("/login") || normalizedPath.startsWith("/register");
     if (user && isGuestOnlyPath) {
         return NextResponse.redirect(new URL("/", request.url));
     }

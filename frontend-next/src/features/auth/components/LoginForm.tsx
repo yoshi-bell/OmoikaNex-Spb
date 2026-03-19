@@ -72,7 +72,22 @@ export function LoginForm() {
                 }
             } catch (e) {
                 console.error("Profile sync failed (Partial Failure):", e);
-                // 認証自体は成功しているため、フォールバックして続行
+                // 認証自体は成功しているため、最低限の情報でフォールバックして続行
+                // (これを忘れると Zustand ストアが更新されず UI が不整合になる)
+                const {
+                    data: { user: sbUser },
+                } = await supabase.auth.getUser();
+                if (sbUser) {
+                    const fallbackUser = userSchema.parse({
+                        id: sbUser.id,
+                        email: sbUser.email,
+                        name: sbUser.user_metadata?.name || "Unknown",
+                        avatar_url: null,
+                        created_at: sbUser.created_at,
+                        updated_at: null,
+                    });
+                    setUser(fallbackUser);
+                }
             }
 
             toast.success("ログインしました。");
