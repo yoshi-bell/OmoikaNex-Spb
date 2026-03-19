@@ -47,7 +47,7 @@ export function TweetCard({
     const router = useRouter();
     const { user } = useAuthUser();
     const { mutate: deleteTweet, isPending: isDeleting } = useDeleteTweet();
-    const { mutate: toggleLike } = useToggleLike();
+    const { mutate: toggleLike, isPending: isTogglingLike } = useToggleLike();
     const { mutate: postTweet, isPending: isPostingReply } = usePostTweet();
 
     // 返信フォームの表示状態
@@ -83,12 +83,18 @@ export function TweetCard({
                 if (result.success) {
                     form.reset();
                     setIsReplyOpen(false);
+                } else {
+                    // 💡 QA指摘: 失敗時もユーザーに理由を伝える
+                    toast.error(result.error?.message || "返信に失敗しました");
                 }
             },
         });
     };
 
     const handleCardClick = () => {
+        // 💡 テキスト選択中のドラッグ終了クリックなら遷移しない (UX改善)
+        if ((window.getSelection()?.toString().length ?? 0) > 0) return;
+
         if (isLinkable) {
             router.push(`/tweet/${tweet.id}`);
         }
@@ -188,8 +194,9 @@ export function TweetCard({
                             }
                             toggleLike(tweet.id);
                         }}
+                        disabled={isTogglingLike}
                         aria-label="いいね"
-                        className={`group flex items-center gap-2 transition-colors hover:text-rose-500 ${
+                        className={`group flex items-center gap-2 transition-colors hover:text-rose-500 disabled:opacity-70 ${
                             tweet.is_liked ? "text-rose-500" : ""
                         }`}
                     >
