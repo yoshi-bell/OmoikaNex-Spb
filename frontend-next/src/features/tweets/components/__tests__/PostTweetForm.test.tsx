@@ -78,9 +78,7 @@ describe("PostTweetForm (ID 2-3 ~ 2-5, 2-9: 投稿機能テスト)", () => {
             status: "idle",
             variables: undefined,
             context: undefined,
-            // 💡 プロジェクト規約に基づき、React Query の複雑な型定義を回避
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
+        } as unknown as ReturnType<typeof usePostTweet>);
     });
 
     it("ID 2-3: 正常な入力で投稿ボタンを押下すると、mutate が呼ばれ、成功時にフォームがリセットされること", async () => {
@@ -176,8 +174,7 @@ describe("PostTweetForm (ID 2-3 ~ 2-5, 2-9: 投稿機能テスト)", () => {
         vi.mocked(usePostTweet).mockReturnValue({
             mutate: mockMutate,
             isPending: true,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
+        } as unknown as ReturnType<typeof usePostTweet>);
 
         render(<PostTweetForm />);
 
@@ -201,7 +198,7 @@ describe("PostTweetForm (ID 2-3 ~ 2-5, 2-9: 投稿機能テスト)", () => {
         expect(screen.getByRole("button", { name: "シェアする" })).toBeDisabled();
     });
 
-    it("ID 2-9: [異常系] API が失敗（result.success: false）を返した場合、フォームがリセットされないこと", async () => {
+    it("ID 2-9: [異常系] API が失敗（result.success: false）を返した場合、フォームがリセットされず、エラーが表示されること", async () => {
         const user = userEvent.setup();
         
         // 失敗時のコールバックをシミュレート

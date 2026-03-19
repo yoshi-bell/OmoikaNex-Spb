@@ -17,9 +17,7 @@ describe("Auth Repository (エラーマッピングの統合検証)", () => {
             auth: {
                 signInWithPassword: mockSignIn,
             },
-            // 💡 プロジェクト規約に基づき、外部ライブラリの複雑な型定義を回避しテストの安定性を優先
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
+        } as unknown as ReturnType<typeof createClient>);
     });
 
     it("正常な認証情報でログインすると、成功を返すこと (Happy Path)", async () => {

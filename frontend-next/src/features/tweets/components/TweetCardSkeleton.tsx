@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export function TweetCardSkeleton() {
     return (
-        <div className="flex gap-4 border-b border-slate-800 p-6">
+        <div data-testid="tweet-skeleton" className="flex gap-4 border-b border-slate-800 p-6">
             {/* アバター (左側) */}
             <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-full bg-slate-800">
                 <Skeleton className="h-full w-full bg-slate-700/50" />

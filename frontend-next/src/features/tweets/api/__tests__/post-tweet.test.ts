@@ -25,9 +25,7 @@ describe("PostTweet Repository (エラーマッピングの統合検証)", () =>
             from: vi.fn().mockReturnValue({
                 insert: mockInsert.mockResolvedValue({ error: null }),
             }),
-            // 💡 プロジェクト規約に基づき、外部ライブラリの複雑な型定義を回避
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
+        } as unknown as ReturnType<typeof createClient>);
     });
 
     it("ID 6-5: RLS 違反 (42501) の時、Repository が PERMISSION_DENIED を返すこと", async () => {
@@ -88,8 +86,7 @@ describe("PostTweet Repository (エラーマッピングの統合検証)", () =>
             from: vi.fn().mockReturnValue({
                 insert: mockInsert,
             }),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
+        } as unknown as ReturnType<typeof createClient>);
 
         const result = await postTweet({ content: "ghost tweet" });
 
