@@ -23,7 +23,13 @@ export function mapSupabaseError(error: unknown): AppError {
         const status = error.status;
         const message = error.message.toLowerCase();
 
-        if (message.includes("already registered")) {
+        if (status === 401) {
+            appError.type = "AUTH_EXPIRED";
+            appError.message = "セッションの期限が切れました。再度ログインしてください。";
+        } else if (status === 429) {
+            appError.type = "RATE_LIMIT";
+            appError.message = "リクエストが多すぎます。しばらく時間を置いてからお試しください。";
+        } else if (message.includes("already registered")) {
             appError.type = "AUTH_FAILED";
             appError.message = "このメールアドレスは既に登録されています。";
             appError.errors = {
@@ -39,12 +45,6 @@ export function mapSupabaseError(error: unknown): AppError {
         ) {
             appError.type = "AUTH_FAILED";
             appError.message = "認証情報が一致しません。";
-        } else if (status === 401) {
-            appError.type = "AUTH_EXPIRED";
-            appError.message = "セッションの期限が切れました。再度ログインしてください。";
-        } else if (status === 429) {
-            appError.type = "RATE_LIMIT";
-            appError.message = "リクエストが多すぎます。しばらく時間を置いてからお試しください。";
         }
 
         // JSON パースエラーや「fetch failed」などがラップされている場合は下流の判定に任せる
