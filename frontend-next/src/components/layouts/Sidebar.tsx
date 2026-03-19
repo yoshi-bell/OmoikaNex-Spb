@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authApi } from "@/features/auth/api/auth";
 import { PostTweetForm } from "@/features/tweets/components/PostTweetForm";
@@ -19,9 +20,11 @@ import { useQueryClient } from "@tanstack/react-query";
 export function Sidebar() {
     const router = useRouter();
     const queryClient = useQueryClient();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
     const { user, isInitialLoading, clearAuth } = useAuthUser();
 
     const handleLogout = async () => {
+        setIsLoggingOut(true);
         const { success, error } = await authApi.signOut();
         if (success) {
             // サーバーキャッシュを完全にクリア (ログアウト後の不整合を防止)
@@ -32,6 +35,7 @@ export function Sidebar() {
             router.refresh();
         } else {
             toast.error(error?.message || "ログアウトに失敗しました");
+            setIsLoggingOut(false);
         }
     };
 
@@ -97,7 +101,8 @@ export function Sidebar() {
 
                                 <button
                                     onClick={handleLogout}
-                                    className="flex items-center gap-4 text-xl font-bold text-white transition-opacity hover:opacity-70"
+                                    disabled={isLoggingOut}
+                                    className="flex items-center gap-4 text-xl font-bold text-white transition-opacity hover:opacity-70 disabled:opacity-50"
                                 >
                                     <Image
                                         src="/images/logout.png"
