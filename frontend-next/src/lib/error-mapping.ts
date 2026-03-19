@@ -13,23 +13,32 @@ export function mapSupabaseError(error: unknown): AppError {
         originalError: error,
     };
 
+    const errorMsg = error instanceof Error ? error.message : String(error);
+
     // 1. Supabase Auth 関連のエラー判定
     if (isSupabaseAuthError(error)) {
         appError.message = error.message;
 
         // HTTP ステータスコードまたはメッセージ内容による詳細判定
         const status = error.status;
-        const message = error.message;
+        const message = error.message.toLowerCase();
 
-        if (status === 400 || message.includes("already registered")) {
+        if (message.includes("already registered")) {
             appError.type = "AUTH_FAILED";
             appError.message = "このメールアドレスは既に登録されています。";
             appError.errors = {
                 email: ["このメールアドレスは既に登録されています。"],
             };
-        } else if (message.includes("Email not confirmed")) {
+        } else if (message.includes("not confirmed") || message.includes("not verified")) {
             appError.type = "AUTH_NOT_CONFIRMED";
             appError.message = "メール認証が完了していません。";
+        } else if (
+            status === 400 ||
+            message.includes("invalid login credentials") ||
+            message.includes("invalid credentials")
+        ) {
+            appError.type = "AUTH_FAILED";
+            appError.message = "認証情報が一致しません。";
         } else if (status === 401) {
             appError.type = "AUTH_EXPIRED";
             appError.message = "セッションの期限が切れました。再度ログインしてください。";
@@ -40,7 +49,8 @@ export function mapSupabaseError(error: unknown): AppError {
 
         // JSON パースエラーや「fetch failed」などがラップされている場合は下流の判定に任せる
         if (
-            !message.includes("Unexpected end of JSON input") &&
+            !message.includes("unexpected end of json input") &&
+            !message.includes("auth session or user missing") &&
             !message.includes("fetch")
         ) {
             return appError;
@@ -71,9 +81,7 @@ export function mapSupabaseError(error: unknown): AppError {
         return appError;
     }
 
-    // 3. ネットワークエラーおよびサーバーエラー判定 (メッセージベース)
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    
+    // 3. ネットワークエラー判定
     if (
         errorMsg.includes("Failed to fetch") ||
         errorMsg.includes("fetch failed") ||
@@ -84,8 +92,10 @@ export function mapSupabaseError(error: unknown): AppError {
         return appError;
     }
 
+    // 4. サーバー/パースエラー
     if (
         errorMsg.includes("Unexpected end of JSON input") ||
+        errorMsg.includes("Auth session or user missing") ||
         error instanceof SyntaxError
     ) {
         appError.type = "SYSTEM_ERROR";

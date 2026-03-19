@@ -24,8 +24,8 @@ import { userSchema } from "@/lib/schemas";
 /**
  * ログインフォーム・コンポーネント
  *
- * 見本画像のデザインを忠実に再現しつつ、
- * RHF + Zod による堅牢なバリデーションと Repository 層を介した通信を行う。
+ * RHF + Zod によるバリデーションと、
+ * 画面遷移を伴うケースにおける二重送信防止（isLoading維持）を実装。
  */
 export function LoginForm() {
     const router = useRouter();
@@ -33,7 +33,6 @@ export function LoginForm() {
     const { setUser } = useAuthStore();
     const supabase = createClient();
 
-    // 1. フォームの初期化 (Zod スキーマを適用)
     const form = useForm<LoginFormType>({
         resolver: zodResolver(loginSchema),
         defaultValues: {
@@ -42,61 +41,75 @@ export function LoginForm() {
         },
     });
 
-    // 2. 送信ハンドラー
     const onSubmit = async (values: LoginFormType) => {
         setIsLoading(true);
 
-        // Repository 層を呼び出し、Supabase と通信 (Cookie のセット)
+        // 1. 認証リクエスト
         const { success, error } = await authApi.signIn(values);
 
         if (success) {
-            // 3. クライアントサイドのストアを即座に同期 (リロードなし反映のため)
-            const {
-                data: { user: sbUser },
-            } = await supabase.auth.getUser();
-            if (sbUser) {
-                const { data: profile } = await supabase
-                    .from("users")
-                    .select("*")
-                    .eq("id", sbUser.id)
-                    .single();
+            // 2. プロフィール同期 (部分的障害でもクラッシュしないよう保護)
+            try {
+                const {
+                    data: { user: sbUser },
+                } = await supabase.auth.getUser();
+                if (sbUser) {
+                    const { data: profile } = await supabase
+                        .from("users")
+                        .select("*")
+                        .eq("id", sbUser.id)
+                        .single();
 
-                const domainUser = userSchema.parse({
-                    ...sbUser,
-                    ...profile,
-                    name:
-                        profile?.name ||
-                        sbUser.user_metadata?.name ||
-                        "Unknown",
-                });
-                setUser(domainUser);
+                    const domainUser = userSchema.parse({
+                        ...sbUser,
+                        ...profile,
+                        name:
+                            profile?.name ||
+                            sbUser.user_metadata?.name ||
+                            "Unknown",
+                    });
+                    setUser(domainUser);
+                }
+            } catch (e) {
+                console.error("Profile sync failed (Partial Failure):", e);
+                // 認証自体は成功しているため、フォールバックして続行
             }
 
-            toast.success('ログインしました。')
-            router.push('/')
-            router.refresh()
-            } else {
-            // 翻訳されたドメインエラーを表示
-            toast.error(error?.message || 'ログインに失敗しました。')
+            toast.success("ログインしました。");
+            router.push("/");
+            router.refresh();
+            // 💡 画面遷移を伴うため、isLoading(false) は呼ばず return する
+            return;
+        }
 
-            // メール認証未完了の場合、その場で再送信して案内ページへ誘導
-            if (error?.type === 'AUTH_NOT_CONFIRMED') {
-              // 通信結果を確実に待機 (Floating Promise の解消)
-              const resendResult = await authApi.resendVerificationEmail(values.email)
-              
-              if (resendResult.success) {
-                toast.info('認証メールを再送信しました。メールをご確認ください。')
+        // 3. エラーハンドリング
+        if (error?.type === "AUTH_NOT_CONFIRMED") {
+            // メール未認証の場合：再送信して案内ページへ
+            const resendResult = await authApi.resendVerificationEmail(
+                values.email
+            );
+
+            if (resendResult.success) {
+                toast.info(
+                    "認証メールを再送信しました。メールをご確認ください。"
+                );
                 setTimeout(() => {
-                  router.push(`/register/verify?email=${encodeURIComponent(values.email)}`)
-                }, 2000)
-              } else {
-                // レートリミット等のエラー時は遷移させず、その場に留める
-                toast.error('メールの送信制限に達したか、エラーが発生しました。しばらく待ってから再度お試しください。')
-              }
+                    router.push(
+                        `/register/verify?email=${encodeURIComponent(values.email)}`
+                    );
+                }, 2000);
+                // 💡 2秒後の遷移を待つため、isLoading(false) は呼ばず return する
+                return;
+            } else {
+                toast.error(
+                    "メールの送信制限に達したか、エラーが発生しました。しばらく待ってから再度お試しください。"
+                );
             }
+        } else {
+            // 通常の認証エラーまたはサーバーエラー
+            toast.error(error?.message || "ログインに失敗しました。");
 
-            // フィールド固有のエラーがあればマッピング
-
+            // フィールドエラーのマッピング
             if (error?.errors) {
                 Object.entries(error.errors).forEach(([field, messages]) => {
                     form.setError(field as keyof LoginFormType, {
@@ -106,6 +119,7 @@ export function LoginForm() {
             }
         }
 
+        // 通常エラー時のみ、再入力を許可するためにローディングを解除する
         setIsLoading(false);
     };
 
@@ -120,7 +134,6 @@ export function LoginForm() {
                     onSubmit={form.handleSubmit(onSubmit)}
                     className="space-y-6"
                 >
-                    {/* メールアドレス入力 */}
                     <FormField
                         control={form.control}
                         name="email"
@@ -139,7 +152,6 @@ export function LoginForm() {
                         )}
                     />
 
-                    {/* パスワード入力 */}
                     <FormField
                         control={form.control}
                         name="password"
@@ -158,7 +170,6 @@ export function LoginForm() {
                         )}
                     />
 
-                    {/* 送信ボタン（見本の鮮やかな青紫色を再現） */}
                     <div className="flex justify-center mt-8">
                         <Button
                             type="submit"
