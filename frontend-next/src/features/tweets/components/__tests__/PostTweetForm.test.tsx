@@ -113,7 +113,7 @@ describe("PostTweetForm (ID 2-3 ~ 2-5, 2-9: 投稿機能テスト)", () => {
         });
     });
 
-    it("ID 2-X: [異常系] 空白文字列（スペースや改行のみ）を入力して連打しても、バリデーションで弾かれ mutate が絶対に呼ばれないこと", async () => {
+    it("ID 2-11: [セキュリティ] 空白文字列（スペースや改行のみ）を入力して連打しても、バリデーションで弾かれ mutate が絶対に呼ばれないこと", async () => {
         const user = userEvent.setup();
         render(<PostTweetForm />);
 
@@ -122,7 +122,7 @@ describe("PostTweetForm (ID 2-3 ~ 2-5, 2-9: 投稿機能テスト)", () => {
 
         // 💡 悪意のある入力：全角スペースと改行のみ
         await user.type(textarea, "　　　\n\n   ");
-        
+
         // 💡 チャタリング（物理的連打）をシミュレート
         await user.click(submitButton);
         await user.click(submitButton);
@@ -134,6 +134,7 @@ describe("PostTweetForm (ID 2-3 ~ 2-5, 2-9: 投稿機能テスト)", () => {
         // フォームはリセットされず、悪意のある入力が残ったままであること
         expect(textarea).toHaveValue("　　　\n\n   ");
     });
+
 
     it("ID 2-3: ホーム画面以外から投稿した場合、ホームへリダイレクトされること", async () => {
         const user = userEvent.setup();

@@ -70,7 +70,7 @@ describe("PostTweet Repository (エラーマッピングの統合検証)", () =>
     });
 
     // 😈 攻撃者（QA）からの贈り物
-    it("ID 6-X [異常系]: 攻撃1：投稿時に Auth セッションが存在しない場合は投稿処理を中断しエラーを返すこと", async () => {
+    it("ID 6-6: [エッジケース] 処理開始時に Auth 取得に失敗した場合（裏側でセッションが切れた状態）、DB操作を中断しエラーを返すこと", async () => {
         // 💡 getUser がエラーを返すようにモックを上書き
         vi.mocked(createClient).mockReturnValue({
             auth: {
@@ -96,7 +96,7 @@ describe("PostTweet Repository (エラーマッピングの統合検証)", () =>
         expect(result.error?.type).toBe("AUTH_EXPIRED");
     });
 
-    it("ID 6-X [異常系]: 攻撃2：DB層で非同期例外（Promise Reject）が発生した場合でもクラッシュせずエラーを返すこと", async () => {
+    it("ID 6-7: [エッジケース] SDK層で Promise 自体が Reject された場合（例外スロー）、クラッシュせず NETWORK_ERROR へマッピングされること", async () => {
         // 💡 insert が礼儀正しい {error} ではなく、例外を throw した場合
         mockInsert.mockRejectedValue(new Error("fetch failed"));
 

@@ -123,7 +123,7 @@ describe("TweetDetail (ID 3-2, 3-3, 3-4: 返信スレッド表示)", () => {
         expect(screen.getByText("読み込み中...")).toBeInTheDocument();
     });
 
-    it("ID 3-X: [異常系] 攻撃2：ツイートが存在しない、または取得に失敗した場合、エラーメッセージが表示されること", () => {
+    it("ID 3-5: [異常系] 攻撃2：ツイートが存在しない、または取得に失敗した場合、エラーメッセージが表示されること", () => {
         // 💡 取得エラー状態をシミュレート
         vi.mocked(useTweetDetail).mockReturnValue({
             data: null,
@@ -138,7 +138,7 @@ describe("TweetDetail (ID 3-2, 3-3, 3-4: 返信スレッド表示)", () => {
         expect(screen.queryByText("Main Tweet Content")).not.toBeInTheDocument();
     });
 
-    it("ID 3-X: [異常系] 攻撃1：すでに返信を取得中の場合、さらに読み込もうとしても fetchNextPage は呼ばれないこと", async () => {
+    it("ID 3-5: [異常系] 攻撃1：すでに返信を取得中の場合、さらに読み込もうとしても fetchNextPage は呼ばれないこと", async () => {
         // 💡 取得中の状態をシミュレート
         vi.mocked(useTweetReplies).mockReturnValue({
             data: { pages: [{ data: mockReplies, nextCursor: "c2", error: null }], pageParams: [undefined] },

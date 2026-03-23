@@ -163,7 +163,7 @@ describe("RegisterForm (ID 1-1 ~ 1-4: 新規登録テスト)", () => {
         expect(signupSpy).not.toHaveBeenCalled();
     });
 
-    it("ID 1-4: [エッジケース] メール認証待ち状態の挙動（登録成功後の遷移）を検証", async () => {
+    it("ID 1-4: [正常系] 登録成功後に認証メール送信メッセージが表示され、検証ページへリダイレクトされること", async () => {
         const user = userEvent.setup();
 
         server.use(
@@ -208,7 +208,7 @@ describe("RegisterForm (ID 1-1 ~ 1-4: 新規登録テスト)", () => {
         });
     });
 
-    it("ID 1-X: [エッジケース] API通信中はボタンがdisabledになり、連打（ダブルサブミット）を防げること", async () => {
+    it("ID 1-11: [エッジケース] ネットワーク遅延時に「新規登録」ボタンを連打しても、API コールが 1 回しか発生しないこと", async () => {
         const user = userEvent.setup();
 
         server.use(
@@ -261,7 +261,7 @@ describe("RegisterForm (ID 1-1 ~ 1-4: 新規登録テスト)", () => {
         );
     });
 
-    it("ID 1-X: [サーバーダウン] 500エラー時にクラッシュせず、エラーメッセージが表示されること", async () => {
+    it("ID 1-12: [サーバーダウン] 500 Internal Server Error が発生した際、クラッシュせず安全にエラーが表示されること", async () => {
         const user = userEvent.setup();
 
         server.use(

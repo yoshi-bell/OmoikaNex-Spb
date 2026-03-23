@@ -132,7 +132,7 @@ describe("LoginForm (ID 1-5 ~ 1-12: ログイン機能の堅牢性テスト)", (
         });
     });
 
-    it("ID 1-4: [エッジケース] メール未認証時の再送信と遷移待ちガードの検証", async () => {
+    it("ID 1-4: [エッジケース] メール未認証のアカウントでログインを試みた場合、再送信が行われ検証ページへ誘導されること", async () => {
         const user = userEvent.setup();
         vi.mocked(authApi.signIn).mockResolvedValue({
             success: false,

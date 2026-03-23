@@ -29,7 +29,7 @@ describe("mapSupabaseError (BaaS エラーマッピングの検証)", () => {
         expect(appError.message).toContain("セッションの期限が切れました");
     });
 
-    it("ID 6-3 [異常系]: RLS による 0 件レスポンス（論理矛盾）のハンドリングを検証", () => {
+    it("ID 6-3: [異常系] RLS による 0 件レスポンス（論理矛盾）が発生した際、SYSTEM_ERROR にフォールバックされること", () => {
         // マッパーが未知の文字列エラーを SYSTEM_ERROR にフォールバックすることを確認
         const error = "RLS_EMPTY_RESPONSE";
         const appError = mapSupabaseError(error);
