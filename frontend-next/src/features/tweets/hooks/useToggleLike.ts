@@ -3,7 +3,6 @@ import { toggleLike } from "@/features/tweets/api/toggle-like";
 import { TweetId } from "@/types/brands";
 import { type TweetDomain } from "@/lib/schemas";
 import { toast } from "sonner";
-import { AppError } from "@/types/error";
 import { UserProfileResponse } from "@/features/users/api/get-profile";
 
 /**
@@ -46,11 +45,31 @@ export function useToggleLike() {
             await queryClient.cancelQueries({ queryKey: ["profile"] });
             await queryClient.cancelQueries({ queryKey: ["profile-likes"] });
 
-            // 1. タイムライン (ホーム画面) の更新
+            // --- 1. バックアップ (スナップショットの取得) ---
+
+            // タイムライン (ホーム画面) 
             const previousTimeline = queryClient.getQueryData<
                 InfiniteData<{ data: TweetDomain[]; nextCursor: string | null }>
             >(["timeline"]);
 
+            // ツイート詳細および返信一覧 ["tweets"] 
+            const previousTweets = queryClient.getQueriesData<unknown>({
+                queryKey: ["tweets"],
+            });
+
+            // プロフィール画面 ["profile"] 
+            const previousProfiles = queryClient.getQueriesData<UserProfileResponse>({
+                queryKey: ["profile"],
+            });
+
+            // プロフィール「いいね」タブ ["profile-likes"] 
+            const previousProfileLikes = queryClient.getQueriesData<TweetDomain[]>({
+                queryKey: ["profile-likes"],
+            });
+
+            // --- 2. 楽観的更新の実行 ---
+
+            // A. タイムラインの更新
             if (previousTimeline) {
                 queryClient.setQueryData<
                     InfiniteData<{ data: TweetDomain[]; nextCursor: string | null }>
@@ -63,37 +82,37 @@ export function useToggleLike() {
                 });
             }
 
-            // 2. 単一ツイート詳細 ["tweets", tweetId] の更新
-            const previousDetail = queryClient.getQueryData<{
-                data: TweetDomain | null;
-                error: AppError | null;
-            }>(["tweets", tweetId]);
-
-            if (previousDetail?.data) {
-                queryClient.setQueryData(["tweets", tweetId], {
-                    ...previousDetail,
-                    data: updateTweet(previousDetail.data, tweetId),
-                });
-            }
-
-            // 3. 返信一覧など、'tweets' プレフィックスを持つ無限スクロールキャッシュを一括更新
-            queryClient.setQueriesData<
-                InfiniteData<{ data: TweetDomain[]; nextCursor?: string | null }>
-            >(
+            // B. tweets プレフィックス（詳細、返信一覧）の一括更新
+            queryClient.setQueriesData<unknown>(
                 { queryKey: ["tweets"] },
-                (old) => {
-                    if (!old || !old.pages) return old;
-                    return {
-                        ...old,
-                        pages: old.pages.map((page) => ({
-                            ...page,
-                            data: page.data?.map((t) => updateTweet(t, tweetId)) || [],
-                        })),
-                    };
+                // 💡 プロジェクト規約に基づき、複雑な多層構造の型定義を回避
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (old: any) => {
+                    // 単一詳細データの場合
+                    if (old && "data" in old && !old.pages) {
+                        return { ...old, data: updateTweet(old.data, tweetId) };
+                    }
+                    // 無限スクロールデータ（返信一覧）の場合
+                    if (old && old.pages) {
+                        return {
+                            ...old,
+                            pages: old.pages.map(
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                (page: any) => ({
+                                    ...page,
+                                    data:
+                                        page.data?.map((t: TweetDomain) =>
+                                            updateTweet(t, tweetId)
+                                        ) || [],
+                                })
+                            ),
+                        };
+                    }
+                    return old;
                 }
             );
 
-            // 4. プロフィール画面 ["profile"] を含む全クエリを更新
+            // C. プロフィール詳細の一括更新
             queryClient.setQueriesData<UserProfileResponse>(
                 { queryKey: ["profile"] },
                 (old) => {
@@ -105,7 +124,7 @@ export function useToggleLike() {
                 }
             );
 
-            // 5. プロフィール「いいね」タブ ["profile-likes"] を更新
+            // D. プロフィールいいね一覧の一括更新
             queryClient.setQueriesData<TweetDomain[]>(
                 { queryKey: ["profile-likes"] },
                 (old) => {
@@ -114,16 +133,29 @@ export function useToggleLike() {
                 }
             );
 
-            return { previousTimeline, previousDetail };
+            return { 
+                previousTimeline, 
+                previousTweets, 
+                previousProfiles, 
+                previousProfileLikes 
+            };
         },
 
         onError: (_err, tweetId, context) => {
+            // 💡 究極のロールバック：保存した全スナップショットを一括復元
             if (context?.previousTimeline) {
                 queryClient.setQueryData(["timeline"], context.previousTimeline);
             }
-            if (context?.previousDetail) {
-                queryClient.setQueryData(["tweets", tweetId], context.previousDetail);
-            }
+            context?.previousTweets?.forEach(([queryKey, data]) => {
+                queryClient.setQueryData(queryKey, data);
+            });
+            context?.previousProfiles?.forEach(([queryKey, data]) => {
+                queryClient.setQueryData(queryKey, data);
+            });
+            context?.previousProfileLikes?.forEach(([queryKey, data]) => {
+                queryClient.setQueryData(queryKey, data);
+            });
+
             toast.error("「いいね」の反映に失敗しました");
         },
 
