@@ -47,22 +47,18 @@ export function useToggleLike() {
 
             // --- 1. バックアップ (スナップショットの取得) ---
 
-            // タイムライン (ホーム画面) 
             const previousTimeline = queryClient.getQueryData<
                 InfiniteData<{ data: TweetDomain[]; nextCursor: string | null }>
             >(["timeline"]);
 
-            // ツイート詳細および返信一覧 ["tweets"] 
             const previousTweets = queryClient.getQueriesData<unknown>({
                 queryKey: ["tweets"],
             });
 
-            // プロフィール画面 ["profile"] 
             const previousProfiles = queryClient.getQueriesData<UserProfileResponse>({
                 queryKey: ["profile"],
             });
 
-            // プロフィール「いいね」タブ ["profile-likes"] 
             const previousProfileLikes = queryClient.getQueriesData<TweetDomain[]>({
                 queryKey: ["profile-likes"],
             });
@@ -83,34 +79,36 @@ export function useToggleLike() {
             }
 
             // B. tweets プレフィックス（詳細、返信一覧）の一括更新
-            queryClient.setQueriesData<unknown>(
-                { queryKey: ["tweets"] },
+            previousTweets.forEach(([queryKey, old]) => {
+                if (!old) return;
                 // 💡 プロジェクト規約に基づき、複雑な多層構造の型定義を回避
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (old: any) => {
-                    // 単一詳細データの場合
-                    if (old && "data" in old && !old.pages) {
-                        return { ...old, data: updateTweet(old.data, tweetId) };
-                    }
-                    // 無限スクロールデータ（返信一覧）の場合
-                    if (old && old.pages) {
-                        return {
-                            ...old,
-                            pages: old.pages.map(
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                (page: any) => ({
-                                    ...page,
-                                    data:
-                                        page.data?.map((t: TweetDomain) =>
-                                            updateTweet(t, tweetId)
-                                        ) || [],
-                                })
-                            ),
-                        };
-                    }
-                    return old;
+                const data = old as any;
+
+                // 単一詳細データの場合
+                if ("data" in data && !data.pages) {
+                    queryClient.setQueryData(queryKey, {
+                        ...data,
+                        data: updateTweet(data.data, tweetId),
+                    });
                 }
-            );
+                // 無限スクロールデータ（返信一覧）の場合
+                else if (data.pages) {
+                    queryClient.setQueryData(queryKey, {
+                        ...data,
+                        pages: data.pages.map(
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            (page: any) => ({
+                                ...page,
+                                data:
+                                    page.data?.map((t: TweetDomain) =>
+                                        updateTweet(t, tweetId)
+                                    ) || [],
+                            })
+                        ),
+                    });
+                }
+            });
 
             // C. プロフィール詳細の一括更新
             queryClient.setQueriesData<UserProfileResponse>(
@@ -142,7 +140,6 @@ export function useToggleLike() {
         },
 
         onError: (_err, tweetId, context) => {
-            // 💡 究極のロールバック：保存した全スナップショットを一括復元
             if (context?.previousTimeline) {
                 queryClient.setQueryData(["timeline"], context.previousTimeline);
             }
