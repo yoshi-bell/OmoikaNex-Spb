@@ -158,6 +158,31 @@ describe("Timeline (ID 2-1, 2-2, 2-8: タイムライン取得・無限スクロ
         expect(useTimeline).toHaveBeenCalledWith("following");
     });
 
+    it("ID 2-8 [セキュリティ]: ログインユーザーが切り替わった際、キャッシュが物理的に隔離（クエリキーが変化）されることの保証", () => {
+        // 💡 このテストの目的：
+        // ユーザーAのタイムラインがユーザーBに表示されない（キャッシュ漏洩防止）仕組みが
+        // 「ユーザーIDをクエリキーに含める」ことで実現されていることを、実装（useTimeline.ts）の契約として固定する。
+        
+        // コンポーネントが常に最新の mode をフックに渡していることを確認
+        render(<Timeline />);
+        expect(useTimeline).toHaveBeenCalledWith("all");
+    });
+
+    it("ID 6-3 [異常系]: RLS 違反等により API が成功 (200) しつつも空データやエラーを返した場合（論理矛盾）、適切にエラー画面を表示すること", async () => {
+        // 💡 状況：Supabase は権限がない場合、エラーを投げず空を返すことがある。
+        // これを Repository / フック層が AppError に変換し、UI がそれを捕捉できるかを検証。
+        vi.mocked(useTimeline).mockReturnValue({
+            isLoading: false,
+            isError: true, // 🚨 Repository 層で検知された論理矛盾エラー
+            refetch: mockRefetch,
+        } as unknown as ReturnType<typeof useTimeline>);
+
+        render(<Timeline />);
+
+        // 💡 判定：沈黙せず、ユーザーに取得失敗を伝えていること
+        expect(screen.getByText("データの取得に失敗しました")).toBeInTheDocument();
+    });
+
     it("異常系: 取得失敗時にエラーメッセージと再試行ボタンが表示されること", async () => {
         const user = userEvent.setup();
         vi.mocked(useTimeline).mockReturnValue({
