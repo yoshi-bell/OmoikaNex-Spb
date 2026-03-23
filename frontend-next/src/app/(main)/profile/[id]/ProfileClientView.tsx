@@ -123,6 +123,7 @@ export function ProfileClientView({ initialData, userId }: ProfileClientViewProp
                                 <Button
                                     variant={user.is_following ? "outline" : "secondary"}
                                     size="default"
+                                    aria-label={user.is_following ? "フォロー解除" : "フォロー"}
                                     disabled={isFollowPending}
                                     onClick={() => toggleFollow(user.id)}
                                     className={`h-10 rounded-full px-6 text-sm font-bold transition-all ${
