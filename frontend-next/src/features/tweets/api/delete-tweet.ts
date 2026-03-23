@@ -16,13 +16,24 @@ export async function deleteTweet(tweetId: TweetId): Promise<{
     const supabase = createClient();
 
     try {
-        const { error } = await supabase
+        const { error, count } = await supabase
             .from("tweets")
-            .delete()
+            .delete({ count: "exact" })
             .eq("id", tweetId);
 
         if (error) {
             return { success: false, error: mapSupabaseError(error) };
+        }
+
+        // 💡 削除件数が 0 の場合は、権限不足（RLS）または存在しないと判断
+        if (count === 0) {
+            return {
+                success: false,
+                error: {
+                    type: "PERMISSION_DENIED",
+                    message: "この操作を行う権限がありません。",
+                },
+            };
         }
 
         return { success: true, error: null };

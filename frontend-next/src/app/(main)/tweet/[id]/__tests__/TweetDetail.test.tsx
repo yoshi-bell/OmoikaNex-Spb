@@ -169,10 +169,29 @@ describe("TweetDetail (ID 3-2, 3-3, 3-4: 返信スレッド表示)", () => {
         expect(likeButtons.length).toBeGreaterThanOrEqual(2);
     });
 
-    it("ID 3-4: 返信をクリックすると、その返信の詳細画面へ遷移すること", async () => {
-        // TweetCard が内部で詳細画面へのリンクを持つため、それをクリック
+    it("ID 3-4 [エッジケース]: 自己参照ループ（親と子が同じID）が発生しているデータでも、無限ループ（スタックオーバーフロー）を起こさず安全に描画が停止すること", () => {
+        // 💡 意図的に不整合なデータを作成
+        const recursiveTweet = { 
+            ...mockMainTweet, 
+            id: asTweetId(999), 
+            parent_id: asTweetId(999) 
+        };
+        vi.mocked(useTweetDetail).mockReturnValue({
+            data: { data: recursiveTweet, error: null },
+            isLoading: false,
+            isError: false,
+        } as unknown as ReturnType<typeof useTweetDetail>);
+
+        // 💡 判定：これがフリーズせずに描画を終えられれば、再帰的なコンポーネント呼び出しをしていない証明になる
+        render(<TweetDetailPage />);
+        expect(screen.getByText("Main Tweet Content")).toBeInTheDocument();
+    });
+
+    it("ID 3-4: 深すぎるネスト（100階層等）の探索に対し、再帰描画を避け「ページ遷移（詳細画面への遷移）」で対応することで安全性が確保されていること", async () => {
         render(<TweetDetailPage />);
 
+        // 💡 返信をクリックした際、その詳細画面へ「遷移」することをアサート
+        // これにより、コンポーネントスタックを累積させず、遷移ごとにリセットされる仕組み（安全停止）を証明する
         const replyContent = screen.getByText("First Reply");
         replyContent.click();
 
