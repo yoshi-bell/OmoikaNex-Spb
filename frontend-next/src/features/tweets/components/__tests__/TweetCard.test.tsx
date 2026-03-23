@@ -146,7 +146,36 @@ describe("TweetCard (アクションと権限の検証)", () => {
             expect(mockToggleLikeMutate).toHaveBeenCalledWith(mockTweet.id);
         });
 
-        it("ID 3-X: [異常系] 攻撃1：返信 API が失敗した場合、フォームは閉じられずエラー理由がトーストで表示されること", async () => {
+        it("ID 3-1: 返信フォームにテキストを入力して送信すると、正しい parent_id を伴って mutate が呼ばれること", async () => {
+            const user = userEvent.setup();
+            const mockPostTweetMutate = vi.fn();
+            
+            vi.mocked(usePostTweet).mockReturnValue({
+                mutate: mockPostTweetMutate,
+                isPending: false,
+            } as unknown as ReturnType<typeof usePostTweet>);
+
+            render(<TweetCard tweet={mockTweet} />);
+
+            // 返信フォームを開く
+            await user.click(screen.getByRole("button", { name: "返信" }));
+
+            // テキストを入力して送信
+            const textarea = screen.getByPlaceholderText("返信をツイート");
+            await user.type(textarea, "This is a reply");
+            await user.click(screen.getByRole("button", { name: "返信する" }));
+
+            // 💡 判定: 正しい content と parent_id が渡されていること
+            expect(mockPostTweetMutate).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    content: "This is a reply",
+                    parent_id: Number(mockTweet.id),
+                }),
+                expect.any(Object)
+            );
+        });
+
+        it("ID 3-1: [異常系] 返信 API が失敗した場合、フォームは閉じられずエラー理由がトーストで表示されること", async () => {
             const user = userEvent.setup();
             const mockPostTweetMutate = vi.fn();
             
