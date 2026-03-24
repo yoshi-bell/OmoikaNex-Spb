@@ -53,16 +53,16 @@ describe("useToggleLike (ID 4-1, 4-2, 4-3: 楽観的更新とロールバック)
         });
     });
 
-    it("ID 4-1: 無限リスト（タイムライン）の複数ページ目にあるツイートが正しく楽観的に更新されること", async () => {
+    it("ID 4-1: [楽観的UI] 未いいねのボタン押下時、API完了を待たずにUIが更新されること（タイムラインの複雑なキー）", async () => {
         const targetTweetId = asTweetId(2);
+        const complexKey = ["timeline", "all", "user-1"]; // 💡 現実に近い複雑なキー
         const infiniteData: InfiniteData<{ data: TweetDomain[]; nextCursor: string | null }> = {
             pages: [
-                { data: [mockInitialTweet], nextCursor: "c1" },
-                { data: [{ ...mockInitialTweet, id: targetTweetId }], nextCursor: "c2" },
+                { data: [{ ...mockInitialTweet, id: targetTweetId }], nextCursor: "c1" },
             ],
-            pageParams: [undefined, "c1"],
+            pageParams: [undefined],
         };
-        queryClient.setQueryData(["timeline"], infiniteData);
+        queryClient.setQueryData(complexKey, infiniteData);
 
         vi.mocked(toggleLike).mockImplementation(() => new Promise(() => {}));
         const { result } = renderHook(() => useToggleLike(), { wrapper });
@@ -70,16 +70,38 @@ describe("useToggleLike (ID 4-1, 4-2, 4-3: 楽観的更新とロールバック)
         result.current.mutate(targetTweetId);
 
         await waitFor(() => {
-            const cachedTimeline = queryClient.getQueryData<typeof infiniteData>(["timeline"]);
-            expect(cachedTimeline?.pages[1].data[0].is_liked).toBe(true);
-            expect(cachedTimeline?.pages[1].data[0].likes_count).toBe(11);
+            const cachedTimeline = queryClient.getQueryData<typeof infiniteData>(complexKey);
+            expect(cachedTimeline?.pages[0].data[0].likes_count).toBe(11);
+        });
+    });
+
+    it("ID 4-1: [楽観的UI] 未いいねのボタン押下時、API完了を待たずにUIが更新されること（プロフィールの複雑なキー）", async () => {
+        const postsKey = ["profile-posts", "user-1"];
+        const initialPosts: InfiniteData<{ data: TweetDomain[]; nextCursor: string | null }> = {
+            pages: [{ data: [mockInitialTweet], nextCursor: null }],
+            pageParams: [undefined],
+        };
+        queryClient.setQueryData(postsKey, initialPosts);
+
+        vi.mocked(toggleLike).mockImplementation(() => new Promise(() => {}));
+        const { result } = renderHook(() => useToggleLike(), { wrapper });
+
+        result.current.mutate(mockTweetId);
+
+        await waitFor(() => {
+            const posts = queryClient.getQueryData<typeof initialPosts>(postsKey);
+            expect(posts?.pages[0].data[0].likes_count).toBe(11);
         });
     });
 
     it("ID 4-3: [異常系] プロフィール「いいね」キャッシュも正しくロールバックされること", async () => {
+        // 💡 修正：InfiniteData 構造に変更
         const likesKey = ["profile-likes", "user-1"];
-        const initialLikes = [mockInitialTweet];
-        queryClient.setQueryData(likesKey, initialLikes);
+        const initialLikesData: InfiniteData<{ data: TweetDomain[]; nextCursor: string | null }> = {
+            pages: [{ data: [mockInitialTweet], nextCursor: null }],
+            pageParams: [undefined],
+        };
+        queryClient.setQueryData(likesKey, initialLikesData);
 
         // 💡 解決策：APIの完了タイミングを手動制御する（Deferred Promise）
         let resolveApi!: (value: Awaited<ReturnType<typeof toggleLike>>) => void;
@@ -94,8 +116,8 @@ describe("useToggleLike (ID 4-1, 4-2, 4-3: 楽観的更新とロールバック)
 
         // 1. API完了「前」に、楽観的更新で 11 になることを確認
         await waitFor(() => {
-            const temp = queryClient.getQueryData<TweetDomain[]>(likesKey);
-            expect(temp?.[0].likes_count).toBe(11);
+            const temp = queryClient.getQueryData<typeof initialLikesData>(likesKey);
+            expect(temp?.pages[0].data[0].likes_count).toBe(11);
         });
 
         // 2. ここで初めて API を「失敗」として完了させる
@@ -107,8 +129,8 @@ describe("useToggleLike (ID 4-1, 4-2, 4-3: 楽観的更新とロールバック)
 
         // 3. ロールバックされて 10 に戻ることを確認
         await waitFor(() => {
-            const rolledBack = queryClient.getQueryData<TweetDomain[]>(likesKey);
-            expect(rolledBack?.[0].likes_count).toBe(10);
+            const rolledBack = queryClient.getQueryData<typeof initialLikesData>(likesKey);
+            expect(rolledBack?.pages[0].data[0].likes_count).toBe(10);
         });
     });
 

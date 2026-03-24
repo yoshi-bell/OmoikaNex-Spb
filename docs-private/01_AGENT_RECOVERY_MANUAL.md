@@ -56,6 +56,6 @@
 ## 3. 想定される結論
 
 現在のフェーズ: Phase 7: 品質保証 (Testing & QA)
-完了していること: プロフィール画面の無限スクロール化および 3 つの専門 API（ProfileInfo, Tweets, LikedTweets）への分割リファクタリングを完遂。`staleTime: 30s` による鮮度維持と `IntersectionObserver` による自動取得を実装済み。テストコードと `TEST_CASES.md` の完全同期、および ID 一致を義務付ける規約（`06_TESTING_GUIDE.md`）の策定を完了。全ユニットテスト 93 件が Green。
-未完了・次のタスク: プロフィール画面での「いいね」表示に関する挙動不審の調査と修正。および、セクション 5（プロフィール管理）のテスト実装。
+完了していること: プロフィール画面の無限スクロール化、および楽観的UIの不具合（5秒の遅延）の完全解消を完遂。`useToggleLike.ts` の `getQueriesData` 移行により、複雑なキーに対する楽観的更新を物理証明済み。`ProfileClientView.test.tsx` を本物の `QueryClient` を用いた「真の結合テスト」へリファクタリングし、Testing Trophy 戦略に基づく堅牢な防御網を確立。プロジェクト全体の全 96 件のテストが Green、Lint エラー 0。
+未完了・次のタスク: セクション 5（プロフィール管理: 画像アップロード、サイズ制限、Server Action 異常系等）のテスト実装。
 

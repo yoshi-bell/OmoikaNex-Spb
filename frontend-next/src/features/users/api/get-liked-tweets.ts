@@ -65,7 +65,7 @@ export async function getLikedTweets(
     }
 
     // 4. マッピングと検品 (Zod)
-    const tweetsDomain = tweetsRaw
+    const tweetsDomain = likedRaw
         .map((item) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const rawTweet = (item as any).tweet; // 結合結果の複雑な型解決のため一時的に許容
