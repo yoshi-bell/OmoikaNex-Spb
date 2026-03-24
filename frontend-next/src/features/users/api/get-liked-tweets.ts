@@ -2,40 +2,29 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { tweetSchema, type TweetDomain } from "@/lib/schemas";
-
-/**
- * Supabase の結合クエリが返す生のデータ構造を定義
- * (TypeScript の推論が困難な複雑なリレーションを型安全に扱うため)
- */
-interface RawLikedItem {
-    tweet: {
-        id: number;
-        user_id: string;
-        content: string;
-        created_at: string;
-        updated_at: string;
-        user: Record<string, unknown> | null;
-        likes_count: { count: number }[];
-        replies_count: { count: number }[];
-    } | null;
-}
+import { APP_CONFIG } from "@/constants/config";
 
 /**
  * 特定のユーザーが「いいね」したツイート一覧を取得する (Server Action)
- * 
- * @param userId 対象のユーザーID
- * @returns いいねしたツイートの配列
+ * ページネーション（無限スクロール）に対応。
  */
-export async function getLikedTweets(userId: string): Promise<TweetDomain[]> {
+export async function getLikedTweets(
+    userId: string,
+    cursor?: string
+): Promise<{
+    data: TweetDomain[];
+    nextCursor: string | null;
+}> {
     const supabase = await createClient();
 
     // 1. ログインユーザー自身の情報を取得
     const { data: { user: authUser } } = await supabase.auth.getUser();
 
     // 2. 「いいね」テーブルを起点にツイート情報を取得
-    const { data, error } = await supabase
+    let query = supabase
         .from("likes")
         .select(`
+            created_at,
             tweet:tweets (
                 *,
                 user:users(*),
@@ -44,34 +33,44 @@ export async function getLikedTweets(userId: string): Promise<TweetDomain[]> {
             )
         `)
         .eq("user_id", userId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(APP_CONFIG.TWEETS_PER_PAGE);
+
+    // カーソルがある場合は、それより古い（前回の最後のいいね日時より前）ものを取得
+    if (cursor) {
+        query = query.lt("created_at", cursor);
+    }
+
+    const { data: likedRaw, error } = await query;
 
     if (error) {
         throw new Error(error.message);
     }
 
-    if (!data) return [];
+    if (!likedRaw || likedRaw.length === 0) {
+        return { data: [], nextCursor: null };
+    }
 
-    // 不透明なレスポンスデータを、定義したインターフェースへ安全にキャスト
-    const likedRaw = data as unknown as RawLikedItem[];
-
-    // 3. ログインユーザー自身の「いいね」リストを取得
+    // 3. ログインユーザー自身の「いいね」リストを取得 (自身のいいね状態を判定するため)
     let myLikes: number[] = [];
     if (authUser) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const currentTweetIds = likedRaw.map(item => (item as any).tweet?.id).filter(Boolean);
         const { data: likes } = await supabase
             .from("likes")
             .select("tweet_id")
-            .eq("user_id", authUser.id);
+            .eq("user_id", authUser.id)
+            .in("tweet_id", currentTweetIds);
         myLikes = likes?.map(l => l.tweet_id) || [];
     }
 
     // 4. マッピングと検品 (Zod)
-    return likedRaw
+    const tweetsDomain = tweetsRaw
         .map((item) => {
-            const rawTweet = item.tweet;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const rawTweet = (item as any).tweet; // 結合結果の複雑な型解決のため一時的に許容
             if (!rawTweet) return null;
 
-            // 定義された型に基づき、安全にオブジェクトを構築して Zod に渡す
             return tweetSchema.parse({
                 ...rawTweet,
                 likes_count: rawTweet.likes_count?.[0]?.count || 0,
@@ -81,4 +80,15 @@ export async function getLikedTweets(userId: string): Promise<TweetDomain[]> {
             });
         })
         .filter((t): t is TweetDomain => t !== null);
+
+
+    // 次ページのカーソル（今回の最後のレコードの created_at）
+    const nextCursor = likedRaw.length > 0 
+        ? likedRaw[likedRaw.length - 1].created_at 
+        : null;
+
+    return {
+        data: tweetsDomain,
+        nextCursor,
+    };
 }

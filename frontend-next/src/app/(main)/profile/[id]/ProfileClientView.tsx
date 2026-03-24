@@ -2,6 +2,7 @@
 
 import { UserProfileResponse, getUserProfile } from "@/features/users/api/get-profile";
 import { getLikedTweets } from "@/features/users/api/get-liked-tweets";
+import { getUserTweets } from "@/features/users/api/getUserTweets";
 import { TweetCard } from "@/features/tweets/components/TweetCard";
 import { TweetCardSkeleton } from "@/features/tweets/components/TweetCardSkeleton";
 import { getAvatarUrl } from "@/lib/utils";
@@ -11,9 +12,10 @@ import { ArrowLeft } from "lucide-react";
 import { EditProfileModal } from "@/features/users/components/EditProfileModal";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { useToggleFollow } from "@/features/follows/hooks/useToggleFollow";
+import { useInView } from "react-intersection-observer";
 
 interface ProfileClientViewProps {
     initialData: UserProfileResponse;
@@ -23,31 +25,66 @@ interface ProfileClientViewProps {
 type TabType = "posts" | "likes";
 
 /**
- * プロフィール画面のクライアント・ビュー
+ * プロフィール画面のクライアント・ビュー (無限スクロール対応版)
  */
 export function ProfileClientView({ initialData, userId }: ProfileClientViewProps) {
     const router = useRouter();
     const { user: loggedInUser } = useAuthUser();
     const [activeTab, setActiveTab] = useState<TabType>("posts");
     const { mutate: toggleFollow, isPending: isFollowPending } = useToggleFollow();
+    const { ref, inView } = useInView();
 
-    // 1. プロフィール基本データと投稿一覧 (Server Action)
+    // 1. プロフィール基本データの取得
     const { data: profileData } = useQuery({
         queryKey: ["profile", userId],
         queryFn: () => getUserProfile(userId),
         initialData: initialData,
-        staleTime: 1000 * 60 * 5,
+        staleTime: 1000 * 30, // 30秒
     });
 
-    // 2. 「いいね」した投稿一覧 (Server Action) - タブ選択時のみ有効化
-    const { data: likedTweets, isLoading: isLoadingLikes } = useQuery({
+    // 2. 自分の投稿一覧 (無限スクロール)
+    const {
+        data: postPages,
+        fetchNextPage: fetchNextPosts,
+        hasNextPage: hasNextPosts,
+        isFetchingNextPage: isFetchingNextPosts,
+        isLoading: isLoadingPosts,
+    } = useInfiniteQuery({
+        queryKey: ["profile-posts", userId],
+        queryFn: ({ pageParam }) => getUserTweets(userId, pageParam),
+        initialPageParam: undefined as string | undefined,
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+        staleTime: 1000 * 30,
+    });
+
+    // 3. 「いいね」した投稿一覧 (無限スクロール)
+    const {
+        data: likedPages,
+        fetchNextPage: fetchNextLikes,
+        hasNextPage: hasNextLikes,
+        isFetchingNextPage: isFetchingNextLikes,
+        isLoading: isLoadingLikes,
+    } = useInfiniteQuery({
         queryKey: ["profile-likes", userId],
-        queryFn: () => getLikedTweets(userId),
+        queryFn: ({ pageParam }) => getLikedTweets(userId, pageParam),
+        initialPageParam: undefined as string | undefined,
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
         enabled: activeTab === "likes",
-        staleTime: 1000 * 60 * 5,
+        staleTime: 1000 * 30,
     });
 
-    const { user, tweets } = profileData;
+    // 無限スクロールのトリガー監視
+    useEffect(() => {
+        if (inView) {
+            if (activeTab === "posts" && hasNextPosts && !isFetchingNextPosts) {
+                fetchNextPosts();
+            } else if (activeTab === "likes" && hasNextLikes && !isFetchingNextLikes) {
+                fetchNextLikes();
+            }
+        }
+    }, [inView, activeTab, hasNextPosts, isFetchingNextPosts, fetchNextPosts, hasNextLikes, isFetchingNextLikes, fetchNextLikes]);
+
+    const { user } = profileData;
 
     // 自分のプロフィールかどうかを判定
     const isOwnProfile =
@@ -56,13 +93,14 @@ export function ProfileClientView({ initialData, userId }: ProfileClientViewProp
     // 【説明変数】プライバシー仕様: 「いいね」タブを表示できるかどうかの判定
     const canShowLikes = (isOwnProfile === true);
 
-    // 【説明変数】現在選択されているタブに基づいて表示するデータの決定
-    // 括弧 () を使用して論理の塊を明示する (Coding Rule 準拠)
+    // 表示データの平坦化
     const displayTweets = (activeTab === "posts")
-        ? tweets
-        : (canShowLikes ? (likedTweets || []) : []);
+        ? postPages?.pages.flatMap((page) => page.data) || []
+        : (canShowLikes ? (likedPages?.pages.flatMap((page) => page.data) || []) : []);
 
-    const isLoading = (activeTab === "likes") && (isLoadingLikes === true);
+    const isLoadingInitial = (activeTab === "posts") ? isLoadingPosts : isLoadingLikes;
+    const isFetchingNext = (activeTab === "posts") ? isFetchingNextPosts : isFetchingNextLikes;
+    const hasNextPage = (activeTab === "posts") ? hasNextPosts : hasNextLikes;
 
     const emptyMessage = (activeTab === "posts")
         ? "まだポストがありません"
@@ -81,7 +119,7 @@ export function ProfileClientView({ initialData, userId }: ProfileClientViewProp
                 <div>
                     <h1 className="text-xl font-bold text-white">{user.name}</h1>
                     <p className="text-xs text-slate-500">
-                        {activeTab === "posts" ? `${tweets.length} 件のポスト` : "いいねしたポスト"}
+                        {activeTab === "posts" ? "ポスト" : "いいねしたポスト"}
                     </p>
                 </div>
             </div>
@@ -199,7 +237,7 @@ export function ProfileClientView({ initialData, userId }: ProfileClientViewProp
 
             {/* 3. 投稿一覧エリア */}
             <div className="flex flex-col">
-                {isLoading ? (
+                {isLoadingInitial ? (
                     <div className="flex flex-col">
                         <TweetCardSkeleton />
                         <TweetCardSkeleton />
@@ -209,15 +247,31 @@ export function ProfileClientView({ initialData, userId }: ProfileClientViewProp
                         {emptyMessage}
                     </div>
                 ) : (
-                    displayTweets.map((tweet) => (
-                        <TweetCard
-                            key={`${activeTab}-${tweet.id}`}
-                            tweet={tweet}
-                        />
-                    ))
+                    <>
+                        {displayTweets.map((tweet) => (
+                            <TweetCard
+                                key={`${activeTab}-${tweet.id}`}
+                                tweet={tweet}
+                            />
+                        ))}
+
+                        {/* 無限スクロールの監視ターゲット */}
+                        <div ref={ref} className="w-full">
+                            {isFetchingNext && (
+                                <div className="flex flex-col">
+                                    <TweetCardSkeleton />
+                                    <TweetCardSkeleton />
+                                </div>
+                            )}
+                            {!hasNextPage && displayTweets.length > 0 && (
+                                <p className="py-12 text-center text-sm text-gray-500">
+                                    すべての投稿を表示しました
+                                </p>
+                            )}
+                        </div>
+                    </>
                 )}
             </div>
-            </div>
-            );
-            }
-
+        </div>
+    );
+}

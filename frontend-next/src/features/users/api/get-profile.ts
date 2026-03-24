@@ -2,9 +2,7 @@
 
 import { 
     userSchema, 
-    tweetSchema, 
-    type UserDomain, 
-    type TweetDomain 
+    type UserDomain 
 } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
 import { cache } from "react";
@@ -12,34 +10,17 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database.types";
 
 /**
- * プロフィール画面用のユーザー詳細データ型
+ * プロフィール画面用のユーザー基本データ型 (軽量化版)
  */
 export interface UserProfileResponse {
     user: UserDomain & {
         following_count: number;
         follower_count: number;
     };
-    tweets: TweetDomain[];
 }
 
 /**
- * 取得した生のツイートデータの構造を定義
- * (TypeScript の推論が困難な複雑なリレーションを型安全に扱うため)
- */
-interface RawProfileTweet {
-    id: number;
-    user_id: string;
-    parent_id: number | null;
-    content: string;
-    created_at: string;
-    updated_at: string;
-    user: Record<string, unknown> | null;
-    likes_count: { count: number }[];
-    replies_count: { count: number }[];
-}
-
-/**
- * プロフィール情報を取得する純粋なロジック (Repository 内部用)
+ * プロフィール基本情報を取得する純粋なロジック (Repository 内部用)
  */
 export async function fetchUserProfile(
     supabase: SupabaseClient<Database>,
@@ -77,51 +58,10 @@ export async function fetchUserProfile(
         isFollowing = !!followRecord;
     }
 
-    // 3. ユーザー投稿一覧の取得
-    const { data, error: tweetsError } = await supabase
-        .from("tweets")
-        .select(`
-            *,
-            user:users(*),
-            likes_count:likes(count),
-            replies_count:tweets!parent_id(count)
-        `)
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
-
-    if (tweetsError) {
-        throw new Error(tweetsError.message);
-    }
-
-    // 不透明なレスポンスデータをインターフェースへ安全にキャスト
-    const tweetsRaw = (data as unknown as RawProfileTweet[]) || [];
-
-    // いいね状態を取得 (今表示するツイートのみに絞り込んで N+1 問題を予防)
-    let myLikes: number[] = [];
-    if (authUser && tweetsRaw.length > 0) {
-        const currentTweetIds = tweetsRaw.map(t => t.id);
-        const { data: likes } = await supabase
-            .from("likes")
-            .select("tweet_id")
-            .eq("user_id", authUser.id)
-            .in("tweet_id", currentTweetIds);
-        myLikes = likes?.map(l => l.tweet_id) || [];
-    }
-
-    // 4. ドメインモデルへのマッピング
+    // 3. ドメインモデルへのマッピング
     const userDomain = userSchema.parse({
         ...userRaw,
         is_following: isFollowing,
-    });
-
-    const tweetsDomain = tweetsRaw.map(tweet => {
-        return tweetSchema.parse({
-            ...tweet,
-            likes_count: tweet.likes_count?.[0]?.count || 0,
-            replies_count: tweet.replies_count?.[0]?.count || 0,
-            is_liked: myLikes.includes(tweet.id),
-            is_following: false 
-        });
     });
 
     return {
@@ -130,7 +70,6 @@ export async function fetchUserProfile(
             following_count: followingRes.count || 0,
             follower_count: followerRes.count || 0,
         },
-        tweets: tweetsDomain,
     };
 }
 
