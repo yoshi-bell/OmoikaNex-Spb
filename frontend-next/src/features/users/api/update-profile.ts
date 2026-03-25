@@ -12,15 +12,17 @@ export interface UpdateProfileResponse {
 
 /**
  * ユーザープロフィールを更新する (Server Action)
- * 
+ *
  * FormData を受け取り、サーバーサイドで Storage アップロードと DB 更新を実行します。
  * クライアントサイドに Supabase の実装詳細を漏らしません。
- * 
+ *
  * @param formData フォームデータ (userId, name, profileText, avatarFile)
  */
-export async function updateProfile(formData: FormData): Promise<UpdateProfileResponse> {
+export async function updateProfile(
+    formData: FormData,
+): Promise<UpdateProfileResponse> {
     const supabase = await createClient();
-    
+
     // FormData から値を取り出し
     const userId = formData.get("userId") as string;
     const name = formData.get("name") as string;
@@ -30,17 +32,34 @@ export async function updateProfile(formData: FormData): Promise<UpdateProfileRe
     if (!userId || !name) {
         return {
             success: false,
-            error: { type: "VALIDATION_ERROR", message: "必須項目が不足しています" }
+            error: {
+                type: "VALIDATION_ERROR",
+                message: "必須項目が不足しています",
+            },
         };
     }
 
-    let avatarPath: string | undefined;
-
     try {
-        // 1. 画像のアップロード処理 (ファイルが存在し、サイズがある場合)
+        // 💡 強化: 本人確認 (ガード)
+        const {
+            data: { user: authUser },
+        } = await supabase.auth.getUser();
+        if (!authUser || authUser.id !== userId) {
+            return {
+                success: false,
+                error: {
+                    type: "PERMISSION_DENIED",
+                    message: "この操作を行う権限がありません。",
+                },
+            };
+        }
+
+        let avatarPath: string | undefined;
+
+        // 1. 画像のアップロード処理
         if (avatarFile && avatarFile.size > 0) {
             const filePath = `${userId}/avatar.png`;
-            
+
             const { error: uploadError } = await supabase.storage
                 .from("avatars")
                 .upload(filePath, avatarFile, {
@@ -50,7 +69,7 @@ export async function updateProfile(formData: FormData): Promise<UpdateProfileRe
             if (uploadError) {
                 return { success: false, error: mapSupabaseError(uploadError) };
             }
-            
+
             avatarPath = filePath;
         }
 
@@ -75,7 +94,6 @@ export async function updateProfile(formData: FormData): Promise<UpdateProfileRe
         }
 
         return { success: true };
-
     } catch (error) {
         console.error("updateProfile Server Action Error:", error);
         return {
