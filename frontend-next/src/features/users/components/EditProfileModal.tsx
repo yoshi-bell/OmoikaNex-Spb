@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { profileFormSchema, type ProfileFormType, type UserDomain } from "@/lib/schemas";
@@ -32,6 +32,8 @@ interface EditProfileModalProps {
     trigger: React.ReactNode;
 }
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
 /**
  * プロフィール編集モーダル・コンポーネント
  * 
@@ -42,6 +44,7 @@ export function EditProfileModal({ user, trigger }: EditProfileModalProps) {
     const [open, setOpen] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [fileError, setFileError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { mutate: updateProfile, isPending } = useUpdateProfile();
@@ -54,12 +57,45 @@ export function EditProfileModal({ user, trigger }: EditProfileModalProps) {
         },
     });
 
+    // 💡 攻撃対策1&2: ステートの初期化をイベント駆動へ変更 (ESLint警告対策)
+    const handleOpenChange = useCallback((newOpen: boolean) => {
+        setOpen(newOpen);
+        if (newOpen) {
+            // モーダルが開く瞬間にリセット
+            setPreviewUrl(null);
+            setSelectedFile(null);
+            setFileError(null);
+            form.reset({
+                name: user.name,
+                profile_text: user.profile_text || "",
+            });
+        }
+    }, [user, form]);
+
+    // 💡 攻撃対策1: メモリリーク防止 (プレビューURLの解放)
+    // 依存配列に previewUrl を含め、値が変わる直前にクリーンアップを実行する
+    useEffect(() => {
+        return () => {
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl);
+            }
+        };
+    }, [previewUrl]);
+
     // 画像選択時の処理
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            // 5MB 制限のチェック
+            if (file.size > MAX_FILE_SIZE) {
+                setFileError("画像サイズは5MB以内にしてください");
+                setSelectedFile(null);
+                e.target.value = ""; // 入力をリセット
+                return;
+            }
+
+            setFileError(null);
             setSelectedFile(file);
-            // プレビュー用URLの生成
             const url = URL.createObjectURL(file);
             setPreviewUrl(url);
         }
@@ -67,7 +103,8 @@ export function EditProfileModal({ user, trigger }: EditProfileModalProps) {
 
     // 保存処理
     const onSubmit = (values: ProfileFormType) => {
-        // FormData の構築 (バイナリ送信対応)
+        if (fileError) return;
+
         const formData = new FormData();
         formData.append("userId", user.id);
         formData.append("name", values.name);
@@ -82,15 +119,13 @@ export function EditProfileModal({ user, trigger }: EditProfileModalProps) {
             onSuccess: (result) => {
                 if (result.success) {
                     setOpen(false);
-                    // プレビューURLのメモリ解放
-                    if (previewUrl) URL.revokeObjectURL(previewUrl);
                 }
             },
         });
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
             <DialogContent className="sm:max-w-[500px] border-slate-800 bg-[#16181c] text-white">
                 <DialogHeader>
@@ -121,10 +156,18 @@ export function EditProfileModal({ user, trigger }: EditProfileModalProps) {
                                 className="hidden"
                                 accept="image/*"
                                 onChange={handleFileChange}
+                                data-testid="avatar-input"
+                                aria-label="クリックして画像を変更"
                             />
-                            <p className="text-xs text-slate-500 text-center">
-                                クリックして画像を変更
-                            </p>
+                            {fileError ? (
+                                <p className="text-xs font-medium text-red-400 text-center">
+                                    {fileError}
+                                </p>
+                            ) : (
+                                <p className="text-xs text-slate-500 text-center">
+                                    クリックして画像を変更
+                                </p>
+                            )}
                         </div>
 
                         {/* 名前入力 */}
@@ -170,7 +213,7 @@ export function EditProfileModal({ user, trigger }: EditProfileModalProps) {
                         <div className="flex justify-end pt-4">
                             <Button
                                 type="submit"
-                                disabled={isPending}
+                                disabled={isPending || !!fileError}
                                 className="rounded-full bg-white px-8 font-bold text-black hover:bg-slate-200"
                             >
                                 {isPending ? "保存中..." : "保存"}

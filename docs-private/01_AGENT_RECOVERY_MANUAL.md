@@ -56,6 +56,7 @@
 ## 3. 想定される結論
 
 現在のフェーズ: Phase 7: 品質保証 (Testing & QA)
-完了していること: プロフィール画面の無限スクロール化、および楽観的UIの不具合（5秒の遅延）の完全解消を完遂。`useToggleLike.ts` の `getQueriesData` 移行により、複雑なキーに対する楽観的更新を物理証明済み。`ProfileClientView.test.tsx` を本物の `QueryClient` を用いた「真の結合テスト」へリファクタリングし、Testing Trophy 戦略に基づく堅牢な防御網を確立。プロジェクト全体の全 96 件のテストが Green、Lint エラー 0。
-未完了・次のタスク: セクション 5（プロフィール管理: 画像アップロード、サイズ制限、Server Action 異常系等）のテスト実装。
+完了していること: プロフィール編集モーダルの強靭化（メモリリーク対策、イベント駆動のリセット実装）および結合テストの完遂。`user.upload()` を用いた高精度な検証により、画像サイズ制限（5MB）や Zod バリデーションの正当性を証明済み。プロジェクト全体の全 101 件のテストが Green、Lint エラー 0。
+未完了・次のタスク: Server Action (`update-profile.ts`) の詳細実装と、Supabase Storage へのアップロード処理を含む Repository 層のテスト実装。
+
 
