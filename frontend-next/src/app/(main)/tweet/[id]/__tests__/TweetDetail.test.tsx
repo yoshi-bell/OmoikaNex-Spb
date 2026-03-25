@@ -103,7 +103,7 @@ describe("TweetDetail (ID 3-2, 3-3, 3-4: 返信スレッド表示)", () => {
         } as unknown as ReturnType<typeof useTweetReplies>);
     });
 
-    it("ID 3-2: 元ツイートが上部に表示され、その下に返信一覧が表示されること", () => {
+    it("ID 3-2: [Integration] 元ツイートが上部に表示され、その下に返信一覧が表示されること", () => {
         render(<TweetDetailPage />);
 
         // メインツイートの確認
@@ -114,7 +114,7 @@ describe("TweetDetail (ID 3-2, 3-3, 3-4: 返信スレッド表示)", () => {
         expect(screen.getByText("スレッド")).toBeInTheDocument();
     });
 
-    it("ID 3-2: 初期ロード中（メインツイート取得中）は読み込み中インジケーターが表示されること", () => {
+    it("ID 3-2: [Integration] 初期ロード中（メインツイート取得中）は読み込み中インジケーターが表示されること", () => {
         vi.mocked(useTweetDetail).mockReturnValue({
             isLoading: true,
         } as unknown as ReturnType<typeof useTweetDetail>);
@@ -123,7 +123,7 @@ describe("TweetDetail (ID 3-2, 3-3, 3-4: 返信スレッド表示)", () => {
         expect(screen.getByText("読み込み中...")).toBeInTheDocument();
     });
 
-    it("ID 3-5: [異常系] 攻撃2：ツイートが存在しない、または取得に失敗した場合、エラーメッセージが表示されること", () => {
+    it("ID 3-5: [Integration] [異常系] 攻撃2：ツイートが存在しない、または取得に失敗した場合、エラーメッセージが表示されること", () => {
         // 💡 取得エラー状態をシミュレート
         vi.mocked(useTweetDetail).mockReturnValue({
             data: null,
@@ -138,7 +138,7 @@ describe("TweetDetail (ID 3-2, 3-3, 3-4: 返信スレッド表示)", () => {
         expect(screen.queryByText("Main Tweet Content")).not.toBeInTheDocument();
     });
 
-    it("ID 3-5: [異常系] 攻撃1：すでに返信を取得中の場合、さらに読み込もうとしても fetchNextPage は呼ばれないこと", async () => {
+    it("ID 3-5: [Integration] [異常系] 攻撃1：すでに返信を取得中の場合、さらに読み込もうとしても fetchNextPage は呼ばれないこと", async () => {
         // 💡 取得中の状態をシミュレート
         vi.mocked(useTweetReplies).mockReturnValue({
             data: { pages: [{ data: mockReplies, nextCursor: "c2", error: null }], pageParams: [undefined] },
@@ -161,7 +161,7 @@ describe("TweetDetail (ID 3-2, 3-3, 3-4: 返信スレッド表示)", () => {
         expect(mockFetchNextPage).not.toHaveBeenCalled();
     });
 
-    it("ID 3-3: 返信一覧の中のツイートに対しても「いいね」ボタンが存在すること", () => {
+    it("ID 3-3: [Integration] 返信一覧の中のツイートに対しても「いいね」ボタンが存在すること", () => {
         render(<TweetDetailPage />);
         
         // メインツイートと返信、それぞれに「いいね」ボタンがあるはず
@@ -169,7 +169,7 @@ describe("TweetDetail (ID 3-2, 3-3, 3-4: 返信スレッド表示)", () => {
         expect(likeButtons.length).toBeGreaterThanOrEqual(2);
     });
 
-    it("ID 3-4 [エッジケース]: 自己参照ループ（親と子が同じID）が発生しているデータでも、無限ループ（スタックオーバーフロー）を起こさず安全に描画が停止すること", () => {
+    it("ID 3-4: [Integration] [エッジケース] 自己参照ループ（親と子が同じID）が発生しているデータでも、無限ループ（スタックオーバーフロー）を起こさず安全に描画が停止すること", () => {
         // 💡 意図的に不整合なデータを作成
         const recursiveTweet = { 
             ...mockMainTweet, 
@@ -187,7 +187,7 @@ describe("TweetDetail (ID 3-2, 3-3, 3-4: 返信スレッド表示)", () => {
         expect(screen.getByText("Main Tweet Content")).toBeInTheDocument();
     });
 
-    it("ID 3-4: 深すぎるネスト（100階層等）の探索に対し、再帰描画を避け「ページ遷移（詳細画面への遷移）」で対応することで安全性が確保されていること", async () => {
+    it("ID 3-4: [Integration] 深すぎるネスト（100階層等）の探索に対し、再帰描画を避け「ページ遷移（詳細画面への遷移）」で対応することで安全性が確保されていること", async () => {
         render(<TweetDetailPage />);
 
         // 💡 返信をクリックした際、その詳細画面へ「遷移」することをアサート
@@ -198,14 +198,14 @@ describe("TweetDetail (ID 3-2, 3-3, 3-4: 返信スレッド表示)", () => {
         expect(mockPush).toHaveBeenCalledWith("/tweet/101");
     });
 
-    it("戻るボタンをクリックすると、前の画面に戻ること", () => {
+    it("ID 3-6: [Integration] [UX機能] 戻るボタンをクリックすると、前の画面に戻ること", () => {
         render(<TweetDetailPage />);
         const backButton = screen.getByRole("button", { name: "" }); // Lucide-react のアイコンボタン
         backButton.click();
         expect(mockBack).toHaveBeenCalled();
     });
 
-    it("返信が 0 件の場合、メッセージが表示されること", () => {
+    it("ID 3-7: [Integration] [エッジケース] 返信が 0 件の場合、メッセージが表示されること", () => {
         vi.mocked(useTweetReplies).mockReturnValue({
             data: { pages: [{ data: [], nextCursor: null, error: null }], pageParams: [undefined] },
             isLoading: false,

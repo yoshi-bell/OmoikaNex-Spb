@@ -3,21 +3,21 @@ import { mapSupabaseError } from "../error-mapping";
 
 describe("mapSupabaseError (BaaS エラーマッピングの検証)", () => {
     describe("ID 6-1: 通信断 (Network)", () => {
-        it("大文字混じりのメッセージ (Failed to fetch) を判定できること", () => {
+        it("ID 6-9: [Unit] 大文字混じりのメッセージ (Failed to fetch) を判定できること", () => {
             const error = new Error("Failed to fetch");
             const appError = mapSupabaseError(error);
             expect(appError.type).toBe("NETWORK_ERROR");
             expect(appError.message).toContain("ネットワークに接続できません");
         });
 
-        it("小文字のみのメッセージ (failed to fetch) を判定できること", () => {
+        it("ID 6-9: [Unit] 小文字のみのメッセージ (failed to fetch) を判定できること", () => {
             const error = new Error("failed to fetch");
             const appError = mapSupabaseError(error);
             expect(appError.type).toBe("NETWORK_ERROR");
         });
     });
 
-    it("ID 6-2 [異常系]: 認証期限切れ (401) が正しく AUTH_EXPIRED にマッピングされること", () => {
+    it("ID 6-2: [Unit] [異常系] 認証期限切れ (401) が正しく AUTH_EXPIRED にマッピングされること", () => {
         const error = {
             __isAuthError: true,
             status: 401,
@@ -29,7 +29,7 @@ describe("mapSupabaseError (BaaS エラーマッピングの検証)", () => {
         expect(appError.message).toContain("セッションの期限が切れました");
     });
 
-    it("ID 6-3: [異常系] RLS による 0 件レスポンス（論理矛盾）が発生した際、SYSTEM_ERROR にフォールバックされること", () => {
+    it("ID 6-3: [Unit] [異常系] RLS による 0 件レスポンス（論理矛盾）が発生した際、SYSTEM_ERROR にフォールバックされること", () => {
         // マッパーが未知の文字列エラーを SYSTEM_ERROR にフォールバックすることを確認
         const error = "RLS_EMPTY_RESPONSE";
         const appError = mapSupabaseError(error);
@@ -37,7 +37,7 @@ describe("mapSupabaseError (BaaS エラーマッピングの検証)", () => {
         expect(appError.type).toBe("SYSTEM_ERROR");
     });
 
-    it("ID 6-4 [異常系]: レートリミット (429) が正しく RATE_LIMIT にマッピングされること", () => {
+    it("ID 6-4: [Unit] [異常系] レートリミット (429) が正しく RATE_LIMIT にマッピングされること", () => {
         const error = {
             __isAuthError: true,
             status: 429,
@@ -50,7 +50,7 @@ describe("mapSupabaseError (BaaS エラーマッピングの検証)", () => {
     });
 
     describe("ID 6-5: DB 制約違反 (PostgREST) & パースエラー", () => {
-        it("一意制約違反 (23505) が VALIDATION_ERROR になること", () => {
+        it("ID 6-5: [Unit] 一意制約違反 (23505) が VALIDATION_ERROR になること", () => {
             const conflictError = {
                 code: "23505",
                 message: "duplicate key",
@@ -62,7 +62,7 @@ describe("mapSupabaseError (BaaS エラーマッピングの検証)", () => {
             expect(appError.message).toContain("既に登録されています");
         });
 
-        it("未知の PGRST エラーが SYSTEM_ERROR になること", () => {
+        it("ID 6-10: [Unit] 未知の PGRST エラーが SYSTEM_ERROR になること", () => {
             const unknownError = {
                 code: "PGRST999",
                 message: "unknown pgrst error",
@@ -74,7 +74,7 @@ describe("mapSupabaseError (BaaS エラーマッピングの検証)", () => {
             expect(appError.message).toContain("データベースエラーが発生しました");
         });
 
-        it("JSON パースエラーが SYSTEM_ERROR になること", () => {
+        it("ID 6-10: [Unit] JSON パースエラーが SYSTEM_ERROR になること", () => {
             const error = new Error("Unexpected end of JSON input");
             const appError = mapSupabaseError(error);
             expect(appError.type).toBe("SYSTEM_ERROR");

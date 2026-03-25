@@ -50,7 +50,7 @@ describe("RegisterForm (ID 1-1 ~ 1-4: 新規登録テスト)", () => {
         });
     });
 
-    it("ID 1-1: 正常な入力で登録すると、認証メール送信メッセージが表示され、検証ページへリダイレクトされること", async () => {
+    it("ID 1-1: [E2E] 正常な値で登録処理を実行した際、ユーザー情報保存・セッション確立後にホームへ遷移すること", async () => {
         const user = userEvent.setup();
 
         server.use(
@@ -92,7 +92,7 @@ describe("RegisterForm (ID 1-1 ~ 1-4: 新規登録テスト)", () => {
         });
     });
 
-    it("ID 1-2: 既に使用されているメールアドレスで登録すると、エラーメッセージが表示されること", async () => {
+    it("ID 1-2: [Integration] 重複メールで登録試行した際、Emailフィールド下に「既に登録されています」と表示されること", async () => {
         const user = userEvent.setup();
 
         server.use(
@@ -134,7 +134,7 @@ describe("RegisterForm (ID 1-1 ~ 1-4: 新規登録テスト)", () => {
         });
     });
 
-    it("ID 1-3: 不正なパスワード（英字のみ）で登録を試みると、フロントバリデーションで阻止されること", async () => {
+    it("ID 1-3: [Unit] 不正パスワードで登録試行した際、Zodが弾き、API通信が発生せずにエラー表示されること", async () => {
         const user = userEvent.setup();
 
         const signupSpy = vi.fn();
@@ -163,7 +163,7 @@ describe("RegisterForm (ID 1-1 ~ 1-4: 新規登録テスト)", () => {
         expect(signupSpy).not.toHaveBeenCalled();
     });
 
-    it("ID 1-4: [正常系] 登録成功後に認証メール送信メッセージが表示され、検証ページへリダイレクトされること", async () => {
+    it("ID 1-4: [Integration] メール未認証でログインしようとした際、AUTH_NOT_CONFIRMED 検知によりリダイレクトされること", async () => {
         const user = userEvent.setup();
 
         server.use(
@@ -208,7 +208,7 @@ describe("RegisterForm (ID 1-1 ~ 1-4: 新規登録テスト)", () => {
         });
     });
 
-    it("ID 1-11: [エッジケース] ネットワーク遅延時に「新規登録」ボタンを連打しても、API コールが 1 回しか発生しないこと", async () => {
+    it("ID 1-11: [Unit] 「新規登録」ボタンを連打した際、通信中は disabled になり、APIコールが 1 回しか発生しないこと", async () => {
         const user = userEvent.setup();
 
         server.use(
@@ -261,7 +261,7 @@ describe("RegisterForm (ID 1-1 ~ 1-4: 新規登録テスト)", () => {
         );
     });
 
-    it("ID 1-12: [サーバーダウン] 500 Internal Server Error が発生した際、クラッシュせず安全にエラーが表示されること", async () => {
+    it("ID 1-12: [Unit] 500エラー発生した際、クラッシュせず、トーストで「サーバーで問題が発生しました」と表示されること", async () => {
         const user = userEvent.setup();
 
         server.use(
@@ -294,7 +294,7 @@ describe("RegisterForm (ID 1-1 ~ 1-4: 新規登録テスト)", () => {
         });
     });
 
-    it("ID 1-7: [ネットワーク切断] 通信エラー時に安全にエラーが表示されること", async () => {
+    it("ID 1-16: [Unit] 新規登録時の通信・ネットワークエラーが発生した際、トーストで安全にエラーが表示されること", async () => {
         const user = userEvent.setup();
 
         server.use(

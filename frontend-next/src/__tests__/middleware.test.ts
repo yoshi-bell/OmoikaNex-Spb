@@ -23,7 +23,7 @@ describe("Middleware (ID 1-9: Guest Guard)", () => {
         });
     };
 
-    it("ID 1-9: ログイン済みユーザーが /login にアクセスした場合、ホームへリダイレクトされること", async () => {
+    it("ID 1-9: [Integration] ログイン済みユーザーが /login にアクセスした場合、ホームへリダイレクトされること", async () => {
         const request = createMockRequest("/login");
 
         // 💡 as any を排除し、ReturnType で型を合わせる
@@ -48,7 +48,7 @@ describe("Middleware (ID 1-9: Guest Guard)", () => {
         );
     });
 
-    it("ID 1-9 [異常系]: ログイン済みユーザーがパス文字の大小を混在させて (/LoGiN) にアクセスした場合でも、ガードをすり抜けずホームへリダイレクトされること", async () => {
+    it("ID 1-9: [Integration] [異常系] ログイン済みユーザーがパス文字の大小を混在させて (/LoGiN) にアクセスした場合でも、ガードをすり抜けずホームへリダイレクトされること", async () => {
         // 💡 悪意のある（あるいはユーザーの誤入力による）大文字混じりのURL
         const request = createMockRequest("/LoGiN");
 
@@ -73,7 +73,7 @@ describe("Middleware (ID 1-9: Guest Guard)", () => {
         );
     });
 
-    it("未ログインユーザーが /login にアクセスした場合、リダイレクトされずに次の処理へ進むこと", async () => {
+    it("ID 1-17: [Integration] 未ログインユーザーが /login にアクセスした場合、リダイレクトされずにログイン画面が表示されること", async () => {
         const request = createMockRequest("/login");
 
         vi.mocked(createServerClient).mockReturnValue({

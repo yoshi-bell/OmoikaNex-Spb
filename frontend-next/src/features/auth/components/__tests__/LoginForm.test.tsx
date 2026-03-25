@@ -98,7 +98,7 @@ describe("LoginForm (ID 1-5 ~ 1-12: ログイン機能の堅牢性テスト)", (
         await user.type(screen.getByPlaceholderText("パスワード"), pass);
     };
 
-    it("ID 1-5: 正しい認証情報でログインすると、setUser が呼ばれ、成功トーストが表示されホームへリダイレクトされること", async () => {
+    it("ID 1-5: [Integration] 正しい認証情報でログインすると、setUser が呼ばれ、成功トーストが表示されホームへリダイレクトされること", async () => {
         const user = userEvent.setup();
         render(<LoginForm />);
         await fillForm(user);
@@ -114,7 +114,7 @@ describe("LoginForm (ID 1-5 ~ 1-12: ログイン機能の堅牢性テスト)", (
         });
     });
 
-    it("ID 1-6: 誤ったパスワードでログインを試みると、認証失敗メッセージが表示されること", async () => {
+    it("ID 1-6: [Integration] 誤ったパスワードでログインを試みると、認証失敗メッセージが表示されること", async () => {
         const user = userEvent.setup();
         vi.mocked(authApi.signIn).mockResolvedValue({
             success: false,
@@ -132,7 +132,7 @@ describe("LoginForm (ID 1-5 ~ 1-12: ログイン機能の堅牢性テスト)", (
         });
     });
 
-    it("ID 1-4: [エッジケース] メール未認証のアカウントでログインを試みた場合、再送信が行われ検証ページへ誘導されること", async () => {
+    it("ID 1-4: [Integration] [エッジケース] メール未認証のアカウントでログインを試みた場合、再送信が行われ検証ページへ誘導されること", async () => {
         const user = userEvent.setup();
         vi.mocked(authApi.signIn).mockResolvedValue({
             success: false,
@@ -165,7 +165,7 @@ describe("LoginForm (ID 1-5 ~ 1-12: ログイン機能の堅牢性テスト)", (
         );
     });
 
-    it("ID 1-Y: [部分的障害] 認証は成功したが、DB通信に失敗した場合でも、Auth層の情報で setUser が呼ばれ、ホームへリダイレクトされること", async () => {
+    it("ID 1-13: [Integration] [部分的障害] 認証は成功したが、DB通信に失敗した場合でも、Auth層の情報で setUser が呼ばれ、ホームへリダイレクトされること", async () => {
         const user = userEvent.setup();
 
         // 💡 DB通信のみエラーを返すようにモックを上書き
@@ -205,7 +205,7 @@ describe("LoginForm (ID 1-5 ~ 1-12: ログイン機能の堅牢性テスト)", (
         });
     });
 
-    it("ID 1-Z: [バリデーション] 空入力時は API 通信が発生しないこと", async () => {
+    it("ID 1-15: [Unit] [バリデーション] 空入力時は API 通信が発生しないこと", async () => {
         const user = userEvent.setup();
         render(<LoginForm />);
         await user.click(screen.getByRole("button", { name: "ログイン" }));
@@ -216,7 +216,7 @@ describe("LoginForm (ID 1-5 ~ 1-12: ログイン機能の堅牢性テスト)", (
         expect(authApi.signIn).not.toHaveBeenCalled();
     });
 
-    it("ID 1-11: [エッジケース] ログインボタンの連打防止が機能すること", async () => {
+    it("ID 1-11: [Unit] [エッジケース] ログインボタンの連打防止が機能すること", async () => {
         const user = userEvent.setup();
         // 💡 通信を遅延させる
         vi.mocked(authApi.signIn).mockImplementation(
@@ -238,7 +238,7 @@ describe("LoginForm (ID 1-5 ~ 1-12: ログイン機能の堅牢性テスト)", (
         expect(submitButton).toBeDisabled();
     });
 
-    it("ID 1-12: [サーバーダウン] 500エラー時に適切なメッセージが表示されること", async () => {
+    it("ID 1-12: [Unit] [サーバーダウン] 500エラー時に適切なメッセージが表示されること", async () => {
         const user = userEvent.setup();
         vi.mocked(authApi.signIn).mockResolvedValue({
             success: false,
@@ -259,7 +259,7 @@ describe("LoginForm (ID 1-5 ~ 1-12: ログイン機能の堅牢性テスト)", (
         });
     });
 
-    it("ID 1-7: [ネットワーク切断] 通信エラー時に安全にエラーが表示されること", async () => {
+    it("ID 1-7: [Unit] [ネットワーク切断] 通信エラー時に安全にエラーが表示されること", async () => {
         const user = userEvent.setup();
         vi.mocked(authApi.signIn).mockResolvedValue({
             success: false,

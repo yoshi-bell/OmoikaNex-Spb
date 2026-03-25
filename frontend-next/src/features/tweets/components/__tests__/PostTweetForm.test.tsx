@@ -81,7 +81,7 @@ describe("PostTweetForm (ID 2-3 ~ 2-5, 2-9: 投稿機能テスト)", () => {
         } as unknown as ReturnType<typeof usePostTweet>);
     });
 
-    it("ID 2-3: 正常な入力で投稿ボタンを押下すると、mutate が呼ばれ、成功時にフォームがリセットされること", async () => {
+    it("ID 2-3: [Integration] 正常な入力で投稿ボタンを押下すると、mutate が呼ばれ、成功時にフォームがリセットされること", async () => {
         const user = userEvent.setup();
         
         // 成功時のコールバックをシミュレート
@@ -113,7 +113,7 @@ describe("PostTweetForm (ID 2-3 ~ 2-5, 2-9: 投稿機能テスト)", () => {
         });
     });
 
-    it("ID 2-11: [セキュリティ] 空白文字列（スペースや改行のみ）を入力して連打しても、バリデーションで弾かれ mutate が絶対に呼ばれないこと", async () => {
+    it("ID 2-11: [Unit] [セキュリティ] 空白文字列（スペースや改行のみ）を入力して連打しても、バリデーションで弾かれ mutate が絶対に呼ばれないこと", async () => {
         const user = userEvent.setup();
         render(<PostTweetForm />);
 
@@ -136,7 +136,7 @@ describe("PostTweetForm (ID 2-3 ~ 2-5, 2-9: 投稿機能テスト)", () => {
     });
 
 
-    it("ID 2-3: ホーム画面以外から投稿した場合、ホームへリダイレクトされること", async () => {
+    it("ID 2-3: [Integration] ホーム画面以外から投稿した場合、ホームへリダイレクトされること", async () => {
         const user = userEvent.setup();
         vi.mocked(usePathname).mockReturnValue("/profile/user-1");
         
@@ -156,7 +156,7 @@ describe("PostTweetForm (ID 2-3 ~ 2-5, 2-9: 投稿機能テスト)", () => {
         });
     });
 
-    it("ID 2-4: 141文字以上のテキストを入力すると、バリデーションエラーが表示されること", async () => {
+    it("ID 2-4: [Unit] 141文字以上のテキストを入力すると、バリデーションエラーが表示されること", async () => {
         const user = userEvent.setup();
         render(<PostTweetForm />);
 
@@ -171,7 +171,7 @@ describe("PostTweetForm (ID 2-3 ~ 2-5, 2-9: 投稿機能テスト)", () => {
         expect(mockMutate).not.toHaveBeenCalled();
     });
 
-    it("ID 2-5: 投稿中はボタンが disabled になり、テキストが「送信中...」に変わること", async () => {
+    it("ID 2-5: [Unit] 投稿中はボタンが disabled になり、テキストが「送信中...」に変わること", async () => {
         vi.mocked(usePostTweet).mockReturnValue({
             mutate: mockMutate,
             isPending: true,
@@ -184,7 +184,7 @@ describe("PostTweetForm (ID 2-3 ~ 2-5, 2-9: 投稿機能テスト)", () => {
         expect(screen.getByPlaceholderText("いまどうしてる？")).toBeDisabled();
     });
 
-    it("未ログイン時は入力欄とボタンが disabled になること", () => {
+    it("ID 2-12: [Unit] 未ログイン時は入力欄とボタンが disabled になること", () => {
         vi.mocked(useAuthUser).mockReturnValue({
             user: null,
             isAuthenticated: false,
@@ -199,7 +199,7 @@ describe("PostTweetForm (ID 2-3 ~ 2-5, 2-9: 投稿機能テスト)", () => {
         expect(screen.getByRole("button", { name: "シェアする" })).toBeDisabled();
     });
 
-    it("ID 2-9: [異常系] API が失敗（result.success: false）を返した場合、フォームがリセットされず、エラーが表示されること", async () => {
+    it("ID 2-9: [Integration] [異常系] API が失敗（result.success: false）を返した場合、フォームがリセットされず、エラーが表示されること", async () => {
         const user = userEvent.setup();
         
         // 失敗時のコールバックをシミュレート
@@ -231,7 +231,7 @@ describe("PostTweetForm (ID 2-3 ~ 2-5, 2-9: 投稿機能テスト)", () => {
         expect(window.scrollTo).not.toHaveBeenCalled();
     });
 
-    it("ID 2-X: [異常系] 攻撃2：mutate 自体が例外（onError）を投げた場合でも、フォームがリセットされず入力が保持されること", async () => {
+    it("ID 2-13: [Integration] [異常系] mutate 自体が例外（onError）を投げた場合でも、フォームがリセットされず入力が保持されること", async () => {
         const user = userEvent.setup();
         
         // onError のコールバックをシミュレート

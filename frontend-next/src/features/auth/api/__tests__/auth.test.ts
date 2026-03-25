@@ -20,7 +20,7 @@ describe("Auth Repository (エラーマッピングの統合検証)", () => {
         } as unknown as ReturnType<typeof createClient>);
     });
 
-    it("正常な認証情報でログインすると、成功を返すこと (Happy Path)", async () => {
+    it("ID 6-11: [Unit] 正常な認証情報でログインした際、成功を返しセッションが確立されること", async () => {
         // 💡 正常系のシミュレート
         mockSignIn.mockResolvedValue({
             data: { user: { id: "user-1" }, session: {} },
@@ -33,7 +33,7 @@ describe("Auth Repository (エラーマッピングの統合検証)", () => {
         expect(result.error).toBeUndefined();
     });
 
-    it("ID 6-2: 認証期限切れ (401) の時、Repository が AUTH_EXPIRED を返すこと", async () => {
+    it("ID 6-2: [Unit] [異常系] 認証期限切れ (401) の時、Repository が AUTH_EXPIRED を返すこと", async () => {
         mockSignIn.mockResolvedValue({
             data: { user: null, session: null },
             error: {
@@ -49,7 +49,7 @@ describe("Auth Repository (エラーマッピングの統合検証)", () => {
         expect(result.error?.type).toBe("AUTH_EXPIRED");
     });
 
-    it("ID 6-4: レートリミット (429) の時、Repository が RATE_LIMIT を返すこと", async () => {
+    it("ID 6-4: [Unit] [異常系] レートリミット (429) の時、Repository が RATE_LIMIT を返すこと", async () => {
         mockSignIn.mockResolvedValue({
             data: { user: null, session: null },
             error: {
@@ -65,7 +65,7 @@ describe("Auth Repository (エラーマッピングの統合検証)", () => {
         expect(result.error?.type).toBe("RATE_LIMIT");
     });
 
-    it("ID 6-1: ネットワークエラーの時、Repository が NETWORK_ERROR を返すこと", async () => {
+    it("ID 6-1: [Unit] [異常系] ネットワークエラーの時、Repository が NETWORK_ERROR を返すこと", async () => {
         // fetch 失敗などの実行時エラーをシミュレート
         mockSignIn.mockRejectedValue(new Error("fetch failed"));
 
