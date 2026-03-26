@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict zdNhgIpjJcnRu1hoiNhNnuzPzTqyOJYJ7MaNnVbPmWVT0P3ZodECzlCIx38mcCW
+\restrict KpfiD4gaD2BmYzOPPW2OwUljEs8J3xae5qOXoWzyKNzVAgE6gYrry1MXNMM7hSN
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -34,7 +34,7 @@ COPY auth.users (instance_id, id, aud, role, email, encrypted_password, email_co
 00000000-0000-0000-0000-000000000000	f7efd216-7fed-4f1a-8f8c-b779bcd75031	authenticated	authenticated	newuser06@example.test	$2a$10$8fyd5/14O1t5lYLC5CAO7ODcqVYES9qqGq0SqFPrj7Dbneso.Bif2	2026-03-17 01:22:39.065334+00	\N		2026-03-17 01:22:31.571938+00		\N			\N	2026-03-17 01:22:39.077473+00	{"provider": "email", "providers": ["email"]}	{"sub": "f7efd216-7fed-4f1a-8f8c-b779bcd75031", "name": "メール認証ユーザー6", "email": "newuser06@example.test", "email_verified": true, "phone_verified": false}	\N	2026-03-17 01:21:22.584779+00	2026-03-17 01:22:39.103138+00	\N	\N			\N		0	\N		\N	f	\N	f
 00000000-0000-0000-0000-000000000000	23a0c48b-dcd9-4346-a904-5f5781839bb8	authenticated	authenticated	newuser07@example.test	$2a$10$HWJTGjZ6wOS/A1G7TIhAX.Qs60njF7EWZUjzUsMqrGCv82wz4q462	\N	\N	2a00b152dc8f4e314b7f5d7d83d5db3d0947a42e8c9e7cf52176b87e	2026-03-17 01:34:24.136953+00		\N			\N	\N	{"provider": "email", "providers": ["email"]}	{"sub": "23a0c48b-dcd9-4346-a904-5f5781839bb8", "name": "メール認証ユーザー7", "email": "newuser07@example.test", "email_verified": false, "phone_verified": false}	\N	2026-03-17 01:30:28.047809+00	2026-03-17 01:34:24.162383+00	\N	\N			\N		0	\N		\N	f	\N	f
 00000000-0000-0000-0000-000000000000	46f56cd3-6721-4dbf-b832-d7b34ea7ac94	authenticated	authenticated	newuser-middle@example.test	$2a$10$jcmyKby5z40kITS7xKv14O5CRzJP3BkWqTed80yXC/7MVnAQFd7nm	2026-03-17 04:58:00.426775+00	\N		2026-03-17 04:57:40.687318+00		\N			\N	2026-03-17 04:58:04.574585+00	{"provider": "email", "providers": ["email"]}	{"sub": "46f56cd3-6721-4dbf-b832-d7b34ea7ac94", "name": "ミドル", "email": "newuser-middle@example.test", "email_verified": true, "phone_verified": false}	\N	2026-03-17 04:57:40.621347+00	2026-03-17 04:58:04.596046+00	\N	\N			\N		0	\N		\N	f	\N	f
-00000000-0000-0000-0000-000000000000	00000000-0000-0000-0000-000000000001	authenticated	authenticated	alice@example.test	$2a$06$/ll69FcnPD/gWsAb/9cMR.NTxoznGFn1DtM.8L/TGLbQeOe1zumiq	2026-03-13 00:09:21.592598+00	\N		\N		\N			\N	2026-03-17 07:16:20.634228+00	{"provider": "email", "providers": ["email"]}	{"name": "Alice"}	\N	2026-03-13 00:09:21.592598+00	2026-03-17 22:10:37.482119+00	\N	\N			\N		0	\N		\N	f	\N	f
+00000000-0000-0000-0000-000000000000	00000000-0000-0000-0000-000000000001	authenticated	authenticated	alice@example.test	$2a$06$/ll69FcnPD/gWsAb/9cMR.NTxoznGFn1DtM.8L/TGLbQeOe1zumiq	2026-03-13 00:09:21.592598+00	\N		\N		\N			\N	2026-03-24 00:43:52.170488+00	{"provider": "email", "providers": ["email"]}	{"name": "Alice"}	\N	2026-03-13 00:09:21.592598+00	2026-03-24 06:06:13.184336+00	\N	\N			\N		0	\N		\N	f	\N	f
 \.
 
 
@@ -42,5 +42,5 @@ COPY auth.users (instance_id, id, aud, role, email, encrypted_password, email_co
 -- PostgreSQL database dump complete
 --
 
-\unrestrict zdNhgIpjJcnRu1hoiNhNnuzPzTqyOJYJ7MaNnVbPmWVT0P3ZodECzlCIx38mcCW
+\unrestrict KpfiD4gaD2BmYzOPPW2OwUljEs8J3xae5qOXoWzyKNzVAgE6gYrry1MXNMM7hSN
 
