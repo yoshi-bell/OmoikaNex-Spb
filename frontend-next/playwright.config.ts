@@ -14,8 +14,8 @@ export default defineConfig({
         ["html", { open: "never" }]
     ],
     use: {
-        // 💡 修正: IPv6名前解決による遅延を回避するため IP アドレスを直接指定
-        baseURL: "http://127.0.0.1:3001",
+        // 💡 修正: 認証のリダイレクト整合性（localhost固定）を保つため、名称を戻す
+        baseURL: "http://localhost:3001",
         trace: "on-first-retry",
         /* 失敗時の視覚的エビデンス */
         screenshot: "only-on-failure",
@@ -32,8 +32,8 @@ export default defineConfig({
       command: process.env.E2E_MODE === 'prod' 
         ? 'npm run start -- -p 3001' 
         : 'npm run dev -- -p 3001',
-      // 💡 修正: 127.0.0.1 での待受を確実に確認
-      url: "http://127.0.0.1:3001",
+      // 💡 修正: localhost での待受を確認
+      url: "http://localhost:3001",
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
     },
