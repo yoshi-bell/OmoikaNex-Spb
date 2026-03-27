@@ -9,6 +9,7 @@
         "lint": "eslint",
         "codegen": "npx supabase gen types typescript --local > src/types/database.types.ts",
         "db:reset": "cd .. && npx supabase db reset && ./supabase/seed-storage.sh",
+        "db:restore": "../supabase/restore-dev-data.sh",
         "test:unit": "vitest run",
         "test:unit:watch": "vitest",
         "e2e": "npm run db:reset && npx playwright test",
