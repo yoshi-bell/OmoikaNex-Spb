@@ -1,27 +1,22 @@
-# GEMINI.md
+# GEMINI.md (OmoikaNex-Spb)
 
 このファイルは、本プロジェクト **OmoikaNex** に参加する AI エージェントのための「ナビゲーションマップ」です。
 
 ## 🗺 ドキュメント案内図 (Navigation Map)
-プロジェクトの全ての正解は `docs-private/` フォルダに集約されています。AI はまず以下の順序でこれらを読解すること。
+1. **[復旧マニュアル]** `docs-private/01_AGENT_RECOVERY_MANUAL.md` (最優先)
+2. **[憲法と設計思想]** `docs-private/02_RULES_AND_ARCHITECTURE.md`
+3. **[手順書]** `docs-private/03_WORKFLOW.md`
+4. **[コーディング規約]** `docs-private/04_CODING_RULES.md` / `05_DESIGN_PATTERNS.md`
 
-1.  **[復旧マニュアル]** `docs-private/01_AGENT_RECOVERY_MANUAL.md`
-    - セッション開始時に真っ先に読み込み、現在のフェーズと歴史を同期せよ。
-2.  **[憲法と設計思想]** `docs-private/02_RULES_AND_ARCHITECTURE.md`
-    - プロジェクトの不変の原則。
-3.  **[手順書]** `docs-private/03_WORKFLOW.md`
-    - 開発サイクル、検証ルール、および「AI駆動開発規約」の定義。
-4.  **[コーディング規約]** `docs-private/04_CODING_RULES.md` / `05_DESIGN_PATTERNS.md`
-    - 具体的な実装スタイルと型安全設計の指針。
+## 🚀 技術スタック & 重要ルール (Summary)
+- **Frontend:** Next.js (App Router), Tailwind CSS (Mobile First, No `@apply`), Shadcn/ui.
+- **Backend/DB:** Supabase (PostgreSQL), Zod (Schema validation).
+- **データアクセス層の徹底分離:** UIから直接Supabaseを呼び出すのは**厳禁**。必ず `src/features/[domain]/api/` を経由すること。
+- **型安全:** Supabaseの型をUIに露出させず、Zodでマッピングしたドメイン型を使用する。
+- **デザイン再現:** `docs-private/project-detail/` 内の `.png` 見本を「絶対正解」としてレイアウトを再現すること。
 
 ## 🤖 AI 駆動開発の独自ルール
-Findy AI駆動開発偏差値の向上と、AI・人間共創の透明性を担保するため、以下を厳守せよ。
+- **Co-authoring:** コミット末尾に `Co-authored-by: Gemini CLI <gemini-cli@google.com>` を付与。
+- **Documentation First:** 変更は必ず `07_DEV_LOG.md` に記録せよ。
+- **意図を語る:** コードコメントは「何」ではなく「なぜ（Why）」を記述すること。
 
-- **Co-authoring:** 
-  全ての Git コミットの末尾に以下の署名を付与すること。
-  `Co-authored-by: Gemini CLI <gemini-cli@google.com>`
-- **Documentation First:** 
-  実装の変更は必ず `07_DEV_LOG.md` に記録し、人間との認識齟齬を最小化せよ。
-
----
-*このファイルは AI 向けですが、公開リポジトリにおける「AIとの共創の証」としても機能します。*

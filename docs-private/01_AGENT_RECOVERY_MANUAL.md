@@ -56,7 +56,7 @@
 ## 3. 想定される結論
 
 現在のフェーズ: Phase 8: デプロイとインフラ検証 (Deployment & Infrastructure Verification)
-完了していること: Phase 7 (Testing & QA) の全行程を完遂。Vitest/E2E テストの合格に加え、自動復旧スクリプト（restore-dev-data.sh）による開発データの冪等な復元環境を確立。また、AI 実装リーダーによる「コンテキスト保護型委譲」体制を正式に導入。
+完了していること: Phase 7 (Testing & QA) の全行程を完遂。全プロジェクト共通の GEMINI.md 整理および Java バックエンドへの学習転用ロードマップの策定を完了。エージェント役割（実装リーダー体制）の再構築。
 未完了・次のタスク: GitHub Actions による CI/CD パイプラインの構築、および Vercel 等への本番デプロイ・環境整合性検証。
 
 
